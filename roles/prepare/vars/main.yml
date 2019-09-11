@@ -1,0 +1,8 @@
+---
+  LOCAL_PACK_ROOT: /usr/local
+  JDK_TAR: /root/jdk-8u201-linux-x64.tar.gz
+  MVN_TAR: /root/apache-maven-3.6.1-bin.tar.gz
+  PROFILE: /etc/profile
+  DIR: /data/jtb
+  NAME: logstast.zhkj.com
+  IP: ifconfig eth0|awk 'NR==2{print $2}'

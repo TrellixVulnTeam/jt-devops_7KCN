@@ -1,0 +1,52 @@
+- name: prepare some directory
+  file: name={{ item }} state=directory
+  with_items:
+    - "{{ DIR }}/bin"
+    - "{{ DIR }}/log"
+    - "{{ DIR }}/infra"
+
+- name: begin tar jdk and maven tar.gz
+  unarchive:
+    src: "{{ item }}"
+    dest: "{{ LOCAL_PACK_ROOT }}"
+  with_items:
+    - "{{ JDK_TAR }}"
+    - "{{ MVN_TAR }}"  
+
+- name: setup some common rpm
+  yum: name={{ item }} state=installed
+  with_items:
+    - wget 
+    - gcc 
+    - vim 
+    - ntpdate 
+    - telnet 
+    - sysstat 
+    - git 
+    - tcpdump 
+    - net-tools 
+    - lrzsz
+
+- name: config java mvn home
+  shell: echo "#add java path" >> "{{ PROFILE }}" && \
+         echo  'export JAVA_HOME="{{ LOCAL_PACK_ROOT }}/jdk1.8.0_201"' >> "{{ PROFILE }}"   && \
+         echo 'export JRE_HOME=${JAVA_HOME}/jre' >> "{{ PROFILE }}"  && \ 
+         echo 'export CLASSPATH=.:${JAVA_HOME}/lib/dt.jar:${JAVA_HOME}/lib/tools.jar:${JAVA_HOME}/lib' >> "{{ PROFILE }}"  && \
+         echo  "#add maven path" >> "{{ PROFILE }}"   && \
+         echo 'export M2_HOME="{{ LOCAL_PACK_ROOT }}/apache-maven-3.6.1"' >> "{{ PROFILE }}"   && \
+         echo 'export PATH=${JAVA_HOME}/bin:${JRE_HOME}/bin:${M2_HOME}/bin:$PATH' >> "{{ PROFILE }}"  
+
+- name: Source /etc/profile 
+  shell: source "{{ PROFILE }}"
+
+- name: config java home
+  file:
+    src: '{{ LOCAL_PACK_ROOT }}/jdk1.8.0_201/bin/java'
+    dest: /usr/bin/java 
+    state: link
+
+- name: config mvn home
+  file:
+    src: '{{ LOCAL_PACK_ROOT }}/apache-maven-3.6.1/bin/mvn'
+    dest: /usr/bin/mvn
+    state: link
