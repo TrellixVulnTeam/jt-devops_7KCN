@@ -1,0 +1,4 @@
+LOCAL_PACK_ROOT: /usr/local
+JDK_TAR: /root/jdk-8u201-linux-x64.tar.gz
+PROFILE: /etc/profile
+DIR: /data/jtb

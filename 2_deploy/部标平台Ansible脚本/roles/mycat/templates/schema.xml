@@ -1,0 +1,102 @@
+<?xml version="1.0"?>
+<!DOCTYPE mycat:schema SYSTEM "schema.dtd">
+<mycat:schema xmlns:mycat="http://io.mycat/">
+
+	<schema name="car_mp" checkSQLschema="false" sqlMaxLimit="10000">
+
+
+		<table name="CA_TRIP_DETAIL" primaryKey="DETAIL_ID" dataNode="jtb_log_dn$1-25" rule="sharding-by-month-begin-time" />
+		<table name="CA_TRIP" primaryKey="TRIP_ID" dataNode="jtb_log_dn$1-25" rule="sharding-by-month-begin-time" />
+		<table name="CA_TRIP_DISCRETE" primaryKey="ID" dataNode="jtb_log_dn$1-25" rule="sharding-by-month-start-time" />
+		<table name="CA_TRIP_DRIFT" primaryKey="ID" dataNode="jtb_log_dn$1-25" rule="sharding-by-month-start-time" />
+		<table name="CA_VEHICLE_ALARM" primaryKey="ALARM_ID" dataNode="jtb_log_dn$1-25" rule="sharding-by-month-start-time" />
+		
+		<table name="AVERAGE_DRIFT_NUMBER" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="CA_MEDIA" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="CA_RULE" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="CA_TRIP_SNAPSHOT_DAILY" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="CD_TASK_LIVE" primaryKey="TASK_ID" dataNode="jtb_core_dn1" />
+		<table name="CD_TASK_LOG" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="ID_QUENCE" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="INFRA_FILE_INFO" primaryKey="FILE_ID" dataNode="jtb_core_dn1" />
+		<table name="INFRA_SEND_LOG" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="INFRA_TEXT_TEMPLATE" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="ORG_COMPANY" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="ORG_DISTRICT" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="ORG_PLATFORM_LINK_DETAIL" primaryKey="DETAIL_ID" dataNode="jtb_core_dn1" />
+		<table name="ORG_PLATFORM_MESSAGE" primaryKey="MSG_ID" dataNode="jtb_core_dn1" />
+		<table name="ORG_PROVIDER" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="ORG_PROVIDER_COMPANY" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="ORG_TRANSAUTH" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="PRO_PUSH_MSG" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="PRO_PUSH_TEMPLATE" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="RES_DEVICE_MODEL" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="RES_DRIVER" primaryKey="DRIVER_ID" dataNode="jtb_core_dn1" />
+		<table name="RES_DVR_DEVICE" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="RES_TERMINAL" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="RES_VEHICLE" primaryKey="VEHICLE_ID" dataNode="jtb_core_dn1" />
+		<table name="RES_VEHICLE_DETAIL" primaryKey="DETAIL_ID" dataNode="jtb_core_dn1" />
+		<table name="RES_VEHICLE_OWNER" primaryKey="OWNER_ID" dataNode="jtb_core_dn1" />
+		<table name="SET_FENCE" primaryKey="FENCE_ID" dataNode="jtb_core_dn1" />
+		<table name="SET_FENCE_CAR" primaryKey="FENCE_ID" dataNode="jtb_core_dn1" />
+		<table name="SET_FENCE_BUSINESS" primaryKey="FENCE_ID" dataNode="jtb_core_dn1" />
+		<table name="SET_MARK" primaryKey="MARK_ID" dataNode="jtb_core_dn1" />
+		<table name="SET_MARK_TYPE" primaryKey="MARK_TYPE_ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_APPLY" primaryKey="APPLY_ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_CAR_BRAND" primaryKey="INDEX_BRAND_ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_CAR_MODEL" primaryKey="MODEL_ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_CAR_SERIAL" primaryKey="SERIAL_ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_CAR_TYPE" primaryKey="VEHICLE_TYPE_ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_CODE" primaryKey="CODE_ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_CONFIG" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_DATA_SCOPE" primaryKey="DEPT_ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_OPERATION_LOG" primaryKey="LOG_ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_ROLE" primaryKey="ROLE_ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_MENU" primaryKey="MENU_ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_ROLE_MENU" primaryKey="ROLE_ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_USER" primaryKey="ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_USER_LIVE" primaryKey="CLIENT_ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_USER_ONLINE_RECORD" primaryKey="RECORD_ID" dataNode="jtb_core_dn1" />
+		<table name="SYS_USER_ROLE" primaryKey="ROLE_ID" dataNode="jtb_core_dn1" />
+		
+	</schema>
+
+	<!-- core dataNode -->
+	<dataNode name="jtb_core_dn1" dataHost="core_dh1" database="car_mp" />
+
+	<!-- log dataNode -->
+	<dataNode name="jtb_log_dn1" dataHost="core_dh1" database="jtb_log_db1"/>
+	<dataNode name="jtb_log_dn2" dataHost="core_dh1" database="jtb_log_db2"/>
+	<dataNode name="jtb_log_dn3" dataHost="core_dh1" database="jtb_log_db3"/>
+	<dataNode name="jtb_log_dn4" dataHost="core_dh1" database="jtb_log_db4"/>
+	<dataNode name="jtb_log_dn5" dataHost="core_dh1" database="jtb_log_db5"/>
+	<dataNode name="jtb_log_dn6" dataHost="core_dh1" database="jtb_log_db6"/>
+	<dataNode name="jtb_log_dn7" dataHost="core_dh1" database="jtb_log_db7"/>
+
+	<dataNode name="jtb_log_dn8" dataHost="core_dh1" database="jtb_log_db8"/>
+	<dataNode name="jtb_log_dn9" dataHost="core_dh1" database="jtb_log_db9"/>
+	<dataNode name="jtb_log_dn10" dataHost="core_dh1" database="jtb_log_db10"/>
+	<dataNode name="jtb_log_dn11" dataHost="core_dh1" database="jtb_log_db11"/>
+	<dataNode name="jtb_log_dn12" dataHost="core_dh1" database="jtb_log_db12"/>
+
+	<dataNode name="jtb_log_dn13" dataHost="core_dh1" database="jtb_log_db13"/>
+	<dataNode name="jtb_log_dn14" dataHost="core_dh1" database="jtb_log_db14"/>
+	<dataNode name="jtb_log_dn15" dataHost="core_dh1" database="jtb_log_db15"/>
+	<dataNode name="jtb_log_dn16" dataHost="core_dh1" database="jtb_log_db16"/>
+	<dataNode name="jtb_log_dn17" dataHost="core_dh1" database="jtb_log_db17"/>
+	<dataNode name="jtb_log_dn18" dataHost="core_dh1" database="jtb_log_db18"/>
+	<dataNode name="jtb_log_dn19" dataHost="core_dh1" database="jtb_log_db19"/>
+	<dataNode name="jtb_log_dn20" dataHost="core_dh1" database="jtb_log_db20"/>
+
+	<dataNode name="jtb_log_dn21" dataHost="core_dh1" database="jtb_log_db21"/>
+	<dataNode name="jtb_log_dn22" dataHost="core_dh1" database="jtb_log_db22"/>
+	<dataNode name="jtb_log_dn23" dataHost="core_dh1" database="jtb_log_db23"/>
+	<dataNode name="jtb_log_dn24" dataHost="core_dh1" database="jtb_log_db24"/>
+	<dataNode name="jtb_log_dn25" dataHost="core_dh1" database="jtb_log_db25"/>
+
+	<dataHost name="core_dh1" maxCon="1000" minCon="10" balance="0" writeType="0" dbType="mysql" dbDriver="native" switchType="1" slaveThreshold="100">
+		<heartbeat>select user()</heartbeat>
+		<writeHost host="coreM1" url="{{ ip2 }}:3306" user="root" password="{{ mysql_pass }}"></writeHost>
+	</dataHost>
+
+</mycat:schema>

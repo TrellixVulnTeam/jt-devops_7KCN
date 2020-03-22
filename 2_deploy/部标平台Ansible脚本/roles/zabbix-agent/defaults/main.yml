@@ -1,0 +1,10 @@
+zabbix_version: 4.0.0
+zabbix_file: "zabbix-{{ zabbix_version }}.tar.gz"
+user: zabbix
+group: zabbix
+port: "10051"
+zabbix_path: /data/jtb/infra/zabbix
+zabbix_log_path: /data/jtb/logs/zabbix
+agent_pid: /data/jtb/infra/zabbix/zabbix_agentd.pid
+agent_log: /data/jtb/logs/zabbix/zabbix_agentd.log
+server_ip: "{{ ip2 }}"

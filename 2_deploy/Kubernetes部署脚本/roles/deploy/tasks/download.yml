@@ -1,0 +1,100 @@
+- name: 创建目录
+  file: path={{ base_dir }}/bin state=directory mode=0755
+
+- name: 检测cfssl工具是否存在
+  stat: path={{ base_dir }}/bin/cfssl
+  register: cfssl_status
+
+- name: 下载cfssl
+  get_url:
+    url: https://pkg.cfssl.org/R1.2/cfssl_linux-amd64
+    dest: /root/
+  when: not cfssl_status.stat.exists
+
+- name: 分发cfssl
+  shell: "cd /root/ && \
+          mv cfssl_linux-amd64  {{ base_dir }}/bin/cfssl"
+
+- name: 检测cfssljson是否存在
+  stat: path={{ base_dir }}/bin/cfssljson  
+  register: cfssljson_status
+
+- name: 下载cfssljson
+  get_url: 
+    url: https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64
+    dest: /root/
+  when: not cfssljson_status.stat.exists
+
+- name: 分发cfssljson
+  shell: "cd /root/ && \
+          mv cfssljson_linux-amd64  {{ base_dir }}/bin/cfssl"
+
+- name: 检测cfssl-certinfo是否存在
+  stat: path={{ base_dir }}/bin/cfssl-certinfo
+  register: certinfo_status
+
+- name: 下载cfssl-certinfo  
+  get_url:
+    url: https://pkg.cfssl.org/R1.2/cfssl-certinfo_linux-amd64
+    dest: /root
+  when: not certinfo_status.stat.exists 
+
+- name: 分发cfssl-certinfo
+  shell: "cd /root/ && \
+          mv cfssl-certinfo_linux-amd64  {{ base_dir }}/bin/cfssl"
+
+#下载docker
+- name: 准备docker相关目录
+  file: name={{ item }} state=directory
+  with_items:
+  - "{{ bin_dir }}"
+  - "{{ base_dir }}/bin"
+  - /etc/docker
+
+- name: 检测docker是否已经下载
+  stat: path={{ base_dir }}/bin/docker
+  register: docker_status
+
+- name: 获取docker安装包是否存在
+  stat: path=/root/docker-{{ docker_version }}.tgz
+  connection: local
+  register: alive_status
+
+- name: 在线下载docker安装包
+  get_url:
+    url: https://mirrors.aliyun.com/docker-ce/linux/static/stable/x86_64/docker-{{ docker_version }}.tgz
+    dest: /root/docker-{{ docker_version }}.tgz
+    mode: 0644
+  connection: local
+  when: not alive_status.stat.exists
+
+- name:  解压安装包
+  unarchive:
+    src: /root/docker-{{ docker_version }}.tgz
+    dest: /root
+  when: not docker_status.stat.exists
+  connection: local
+
+- name: 拷贝docker
+  shell: "cp /root/docker/* {{ bin_dir }}/ && \
+          chmod 755 {{ bin_dir }}/*"
+  connection: local
+  when: not docker_status.stat.exists
+
+- name: docker命令自动补全
+  copy: src={{ bin_dir }}/docker dest=/etc/bash_completion.d/docker mode=0644
+
+- name: docker国内镜像加速
+  template: src={{ base_dir }}/roles/docker/templates/daemon.json.j2 dest=/etc/docker/daemon.json
+
+- name: 创建docker的systemd unit文件
+  template: src={{ base_dir }}/roles/docker/templates/docker.service.j2 dest=/etc/systemd/system/docker.service
+  tags: upgrade_docker, download_docker
+
+- name: 开机启用docker 服务
+  shell: systemctl enable docker
+  ignore_errors: true
+
+- name: 开启docker 服务
+  shell: systemctl daemon-reload && systemctl restart docker
+  tags: upgrade_docker

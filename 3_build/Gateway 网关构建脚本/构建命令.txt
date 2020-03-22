@@ -1,0 +1,12 @@
+执行路径：
+测试环境 WEB001 /opt/build/gateway/lib
+
+../bin/build_and_push_image.sh gateway-calc alarm 1.1.0.BUILD-SNAPSHOT 21001
+../bin/build_and_push_image.sh gateway-calc trip 1.1.0.BUILD-SNAPSHOT 21002
+../bin/build_and_push_image.sh gateway-calc forward 1.1.0.BUILD-SNAPSHOT 21003
+
+../bin/build_and_push_image.sh jt-gateway 808 1.1.0.BUILD-SNAPSHOT 10005,9998
+../bin/build_and_push_image.sh jt-gateway 809-down 1.1.0.BUILD-SNAPSHOT 10011,9994
+../bin/build_and_push_image.sh jt-gateway 809-up 1.1.0.BUILD-SNAPSHOT 10010,9995
+../bin/build_and_push_image.sh jt-gateway 1078 1.1.0.BUILD-SNAPSHOT 10004,9996,9997,60002
+../bin/build_and_push_image.sh jt-gateway annex 1.1.0.BUILD-SNAPSHOT 10012,9990

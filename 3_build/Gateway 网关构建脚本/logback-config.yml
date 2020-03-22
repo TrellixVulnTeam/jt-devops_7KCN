@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logback-config
+data:
+  logback-spring.xml: |
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    <configuration
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.padual.com/java/logback.xsd" debug="false"
+        scan="true" scanPeriod="30 seconds">
+        <!-- <configuration debug="true" scan="true" scanPeriod="30 seconds"> -->
+        
+        <shutdownHook
+            class="ch.qos.logback.core.hook.DelayingShutdownHook" />
+
+        <springProperty scope="context" name="rootPath"
+                        source="common.logging.path" defaultValue="logs" />
+
+        <springProperty scope="context" name="appName"
+            source="spring.application.name" defaultValue="jtb-ms" />
+
+        <springProperty scope="context" name="appGroup"
+                        source="spring.application.group" defaultValue="jt-gateway" />
+
+        <springProperty scope="context" name="port"
+            source="server.port" defaultValue="00000" />
+
+        <appender name="STDOUT"
+            class="ch.qos.logback.core.ConsoleAppender">
+            <encoder
+                class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%level] [%class:%line] - %m %n
+                </pattern>
+            </encoder>
+        </appender>
+
+        <appender name="FILE"
+            class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${rootPath}/${appName}.log</file>
+            <rollingPolicy
+                class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${rootPath}/${appName}-%d{yyyy-MM-dd}.%i.log
+                </fileNamePattern>
+                <maxFileSize>100MB</maxFileSize>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>5GB</totalSizeCap>
+            </rollingPolicy>
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%level] [%class:%line] - %m %n
+                </pattern>
+            </encoder>
+        </appender>
+
+        <appender name="PROD_LOGSTASH"
+                class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+            <destination>logstash.zhkj.com:9250</destination>
+            <queueSize>1048576</queueSize>
+            <encoder charset="UTF-8"
+                    class="net.logstash.logback.encoder.LogstashEncoder" />
+        </appender>
+
+        <springProfile name="dev,local">
+            <root level="INFO">
+                <appender-ref ref="FILE" />
+                <appender-ref ref="STDOUT" />
+                <!--<appender-ref ref="DEV_LOGSTASH" />-->
+            </root>
+        </springProfile>
+
+        <springProfile name="test">
+            <root level="INFO">
+                <appender-ref ref="FILE" />
+                <appender-ref ref="STDOUT" />
+                <!--<appender-ref ref="TEST_LOGSTASH" />-->
+            </root>
+        </springProfile>
+
+        <springProfile name="prod">
+            <root level="INFO">
+                <appender-ref ref="FILE" />
+                <appender-ref ref="STDOUT" />
+                <appender-ref ref="PROD_LOGSTASH" />
+            </root>
+        </springProfile>
+        <logger name="com.baomidou.mybatisplus" level="DEBUG" additivity="false"></logger>
+    </configuration>

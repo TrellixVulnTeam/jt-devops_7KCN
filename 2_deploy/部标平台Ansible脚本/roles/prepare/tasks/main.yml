@@ -1,0 +1,65 @@
+- name: 创建目录
+  file: name={{ item }} state=directory
+  with_items:
+    - "{{ DIR }}/bin"
+    - "{{ DIR }}/logs"
+    - "{{ DIR }}/infra"
+    - "/etc/yum.repos.d/repo"
+
+- name: 解压java环境包
+  unarchive:
+    src: "{{ JDK_TAR }}"
+    dest: "{{ LOCAL_PACK_ROOT }}"
+
+- name: 备份原有的yum仓库
+  shell: cd /etc/yum.repos.d/  && mv *.repo  repo
+
+- name: 配置阿里云镜像源
+  get_url:
+    url: http://mirrors.aliyun.com/repo/Centos-7.repo
+    dest: /etc/yum.repos.d/CentOS-Base.repo
+
+- name: 分发阿里云yum仓库
+  copy: src=/etc/yum.repos.d/CentOS-Base.repo dest=/etc/yum.repos.d/CentOS-Base.repo mode=0644
+
+- name: 安装基础常用包
+  yum: name={{ item }} state=present
+  with_items:
+    - wget 
+    - gcc 
+    - vim 
+    - ntpdate 
+    - telnet 
+    - sysstat 
+    - git 
+    - tcpdump 
+    - net-tools 
+    - lrzsz
+  tags: install_basic_rpm
+
+- name: 配置java、jdk环境变量
+  shell: echo "#add java path" >> "{{ PROFILE }}" && \
+         echo  'export JAVA_HOME="{{ LOCAL_PACK_ROOT }}/jdk1.8.0_201"' >> "{{ PROFILE }}"   && \
+         echo 'export JRE_HOME=${JAVA_HOME}/jre' >> "{{ PROFILE }}"  && \ 
+         echo 'export CLASSPATH=.:${JAVA_HOME}/lib/dt.jar:${JAVA_HOME}/lib/tools.jar:${JAVA_HOME}/lib' >> "{{ PROFILE }}"  && \
+         #echo  "#add maven path" >> "{{ PROFILE }}"   && \
+         #echo 'export M2_HOME="{{ LOCAL_PACK_ROOT }}/apache-maven-3.6.1"' >> "{{ PROFILE }}"   && \
+         #echo 'export PATH=${JAVA_HOME}/bin:${JRE_HOME}/bin:${M2_HOME}/bin:$PATH' >> "{{ PROFILE }}"   && \
+         echo 'export PATH=${JAVA_HOME}/bin:${JRE_HOME}/bin:$PATH' >> "{{ PROFILE }}"   && \
+         echo "{{ inventory_hostname }}  logstash.zhkj.com" >> /etc/hosts && \
+         echo "{{ ip1 }} config.zhkj.com" >> /etc/hosts
+
+- name: 加载环境变量 
+  shell: source "{{ PROFILE }}"
+
+- name: 设置java软链接
+  file:
+    src: '{{ LOCAL_PACK_ROOT }}/jdk1.8.0_201/bin/java'
+    dest: /usr/bin/java 
+    state: link
+
+#- name: 设置mvn软链接
+#  file:
+#    src: '{{ LOCAL_PACK_ROOT }}/apache-maven-3.6.1/bin/mvn'
+#    dest: /usr/bin/mvn
+#    state: link

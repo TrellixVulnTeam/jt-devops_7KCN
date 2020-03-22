@@ -1,0 +1,19 @@
+zk_file_path: "/root"
+common_path: "/data/jtb/infra"
+zk_install_path: "/data/jtb/infra/zookeeper"
+
+zk_version: "2.12-2.2.0"
+zk_file: "{{ zk_file_path }}/kafka_{{ zk_version }}.tgz"
+zk_start_cmd: "{{ common_path }}/kafka_{{ zk_version }}/bin/zookeeper-server-start.sh"
+zk_stop_cmd: "{{ common_path }}/kafka_{{ zk_version }}/bin/zookeeper-server-stop.sh"
+
+zk_data_dir: "{{ zk_install_path }}/data"
+zk_log_dir: "{{ zk_install_path }}/log"
+zk_port: "2181"
+zk_config_path: "{{ common_path }}/kafka_{{ zk_version }}/config/zookeeper.properties"
+zk_log_path: "/data/jtb/logs/zookeeper"
+
+myid: ""
+ip1: ""
+ip2: ""
+ip3: ""

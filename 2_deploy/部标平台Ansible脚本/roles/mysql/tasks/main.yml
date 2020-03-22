@@ -1,0 +1,101 @@
+- name: 创建mysql组
+  group: 
+    name: "{{ mysql_group }}"
+    state: present
+
+- name: 创建mysql用户
+  user:
+    name: "{{ mysql_user }}"
+    group: "{{ mysql_group }}"
+    shell: /sbin/nologin
+
+- name: 创建mysql安装目录
+  file: path={{ mysql_install_path }} state=directory mode=0755 recurse=yes
+
+- name: 检查MySQL安装包是否存在
+  stat: path=/root/{{ mysql_file }}
+  register: exists_status
+  
+- name: 分发安装包
+  copy: src={{ mysql_file }} dest={{ mysql_file }}
+  when: not exists_status.stat.exists
+
+- name: 解压MySQL安装包
+  unarchive:
+    src: "{{ mysql_file }}"
+    dest: "{{ mysql_file_path }}"
+
+- name: 安装MySQL基础依赖包
+  yum: 
+    name:
+      - autoconf
+      - MySQL-python
+    state: present
+
+- name: 卸载mariadb相关依赖包
+  yum: name=mariadb-1:5.5.64-1.el7.x86_64 state=absent
+  ignore_errors: true
+
+- name: 获取状态
+  stat: path={{ mysql_db }}
+  register: mysql_run_result
+
+- name: 安装MySQL
+  shell: "cd /root/ && yum -y localinstall {{ item }}"
+  with_items:
+    - "MySQL-client-{{ mysql_version }}-1.el7.x86_64.rpm"
+    - "MySQL-devel-{{ mysql_version }}-1.el7.x86_64.rpm"
+    - "MySQL-embedded-{{ mysql_version }}-1.el7.x86_64.rpm"
+    - "MySQL-shared-{{ mysql_version }}-1.el7.x86_64.rpm"
+    - "MySQL-shared-compat-{{ mysql_version }}-1.el7.x86_64.rpm"
+    - "MySQL-test-{{ mysql_version }}-1.el7.x86_64.rpm"
+    - "MySQL-server-{{ mysql_version }}-1.el7.x86_64.rpm"
+  when: not mysql_run_result.stat.exists
+  tags: setup_mysql
+
+- block:
+    - name: 拷贝配置文件
+      template: src=my.cnf dest=/etc/my.cnf  backup=yes
+
+    - name: 拷贝启动脚本
+      copy: src=/usr/share/mysql/mysql.server dest=/etc/init.d/mysqld mode=0755
+
+    - name: "安装数据库"
+      shell: "/usr/bin/mysql_install_db --defaults-file=/etc/my.cnf \
+             --user={{ mysql_user }} --group={{ mysql_group }} \
+             --datadir={{ mysql_path }}"
+  when: not mysql_run_result.stat.exists
+  tags: make_install_mysql
+
+- name: 启动数据库
+  shell: "/etc/init.d/mysqld start"
+  ignore_errors: true
+
+- name: 检查数据库运行状态
+  shell: "/etc/init.d/mysqld status|grep running"
+  register: mysql_status
+  
+- name: 删除默认数据
+  file: path=/var/lib/mysql state=absent
+  when: mysql_status.rc == 0 
+   
+- name: 创建目录
+  file: "path=/var/lib/mysql state=directory mode=0755 owner={{ mysql_user }}  group={{ mysql_group }}"
+
+- name: 修改目录权限
+  shell: "chmod 755 {{ mysql_path }}"
+  
+- name: 添加mysql.sock软连接
+  file:
+    src: "{{ mysql_path }}/mysql.sock"
+    dest: "/var/lib/mysql/mysql.sock"
+    state: "link"
+
+- name: 设置密码
+  shell: "mysqladmin -u root password {{ mysql_pass }}"
+  ignore_errors: true
+  run_once: true
+  
+- name: 设置root用户登录权限
+  shell: mysql -uroot -p{{ mysql_pass }} -e  "grant all on *.* to root@'%' identified by '{{ mysql_pass }}'";
+  tags: reset_user_password

@@ -1,0 +1,4 @@
+ftp_user: ftpuser
+ftp_group: ftpuser
+ftp_pass: ftpuser
+ftp_home: "/data/jtb/infra/ftp"

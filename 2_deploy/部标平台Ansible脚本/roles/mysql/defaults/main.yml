@@ -1,0 +1,25 @@
+mysql_file_path: "/root"
+mysql_install_path: "/data/jtb/infra"
+
+mysql_user: "mysql"
+mysql_group: "mysql"
+
+mysql_path: "{{ mysql_install_path }}/mysql"
+mysql_version: "5.6.34"
+mysql_port: "3306"
+mysql_file: "{{ mysql_file_path }}/MySQL-{{ mysql_version }}-1.el7.x86_64.rpm-bundle.tar"
+mysql_sock: "{{ mysql_install_path }}/mysql/mysql.sock"
+mysql_db: "/data/jtb/infra/mysql/mysql/"
+
+mysql_share_path: "/usr/share/mysql"
+mysql_host: "{{ ansible_fqdn }}"
+mysql_pass: ""
+
+mysql_replication_user: {name: 'repluser', password: 'repluser'}
+mysql_replication_host: ''
+mysql_replication_master_port: 3306
+mysql_replication_master: ''
+mysql_replication_role: ''
+mysql_cnf: "/etc/my.cnf"
+
+

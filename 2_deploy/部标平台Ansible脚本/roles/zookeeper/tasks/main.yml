@@ -1,0 +1,52 @@
+- name: "创建目录"
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+    recurse: true
+  with_items:
+    - "{{ zk_install_path }}"
+    - "{{ zk_install_path }}/data"
+    - "{{ zk_install_path }}/log"
+    - "{{ zk_log_path }}"
+
+- name: "解压安装包"
+  unarchive:
+    src: "{{ zk_file }}"
+    dest: "{{ common_path }}"
+
+- name: "指定zk id"
+  shell: "echo {{ myid }}  > {{ zk_data_dir }}/myid"
+
+- name: "部署配置文件"
+  template:
+    src: zookeeper.properties
+    dest: "{{ zk_config_path }}"
+    backup: yes
+
+- name: "部署启动脚本"
+    copy: 
+      src: {{ base_dir }}/shell/zookeeper
+      dest: /data/jtb/bin/zookeeper
+      mode: 0755
+      
+- name: "启动脚本配置软连接"
+    file:
+      src: /data/jtb/bin/zookeeper
+      dest: /etc/init.d/zookeeper
+      state: link
+
+- name: "启动服务"
+  shell: "nohup {{ common_path }}/kafka_{{ zk_version }}/bin/zookeeper-server-start.sh \ 
+          {{ zk_config_path }} > {{ zk_log_path }}/zookeeper.log 2>&1 &"
+  tags: start_zookeeper
+  
+- name: 加入chkcofig管理
+  shell: "chkconfig --add zookeeper && chkconfig zookeeper on"
+  
+- name: 以轮询的方式等待服务全部启动
+  shell: "/etc/init.d/zookeeper status|grep running"
+  register: zookeeper_status
+  until: '"running" in zookeeper_status.stdout'
+  retries: 8
+  delay: 8

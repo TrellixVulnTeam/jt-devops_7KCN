@@ -1,0 +1,59 @@
+- name: "创建用户组"
+  group:
+    name: "{{ user }}"
+    state: present
+    
+- name: "创建用户"
+  user:
+    name: "{{ user }}"
+    group: "{{ group }}"
+
+- name: 创建日志目录
+  file: path={{ zabbix_log_path }} state=directory owner={{ user }} group={{ group }} mode=0755
+    
+- name: "安装gcc工具"
+  yum:
+    name:
+      - gcc
+      - pcre-devel
+    state: installed
+    
+- name: "创建目录"
+  file:
+    path: "{{ zabbix_path }}"
+    state: directory
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    mode: 0755
+
+- name: 分发安装包
+  copy: src=/root/{{ zabbix_file }} dest=/root/{{ zabbix_file }}
+  
+- name: "解压安装包"
+  unarchive:
+    src: "/root/{{ zabbix_file }}"
+    dest: /root
+    creates: "/root/zabbix-{{ zabbix_version }}"
+    
+- name: "编译安装"
+  shell: "cd /root/zabbix-{{ zabbix_version }} && \
+          ./configure --prefix={{ zabbix_path }} --enable-agent && \
+          make install"
+ 
+- name: "拷贝启动脚本"
+  template:
+    src: zabbix_agentd
+    dest: /etc/init.d/zabbix_agentd
+    mode: 0755
+    
+- name: "拷贝配置文件"
+  template:
+    src: zabbix_agentd.conf
+    dest: "{{ zabbix_path }}/etc/zabbix_agentd.conf"
+    backup: yes
+    
+- name: 启动zabbix agent
+  shell: /etc/init.d/zabbix_agentd start
+
+- name: zabbix_agent加入chkconfig管理
+  shell: "chkconfig --add zabbix_agentd && chkconfig zabbix_agentd on"

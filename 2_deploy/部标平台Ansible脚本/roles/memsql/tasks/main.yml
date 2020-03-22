@@ -1,0 +1,14 @@
+- name: "创建用户组"
+  group: name={{ user }} state=present
+    
+- name: "创建用户设置密码"
+  user: name={{ item.name }} password={{ item.chpass | password_hash('sha512') }}  update_password=always
+  with_items:
+    - { name: 'admin', chpass: 'admin' }
+  
+- name: "安装"
+  yum: name="{{ item }}"  state=installed
+  with_items:
+    - /root/memsql-client-1.0.0-7e30b698e9.x86_64.rpm
+    - /root/memsql-studio-1.7.1-9754b6b8cc.x86_64.rpm
+    - /root/memsql-toolbox-1.2.2-bcf06f20a7.x86_64.rpm

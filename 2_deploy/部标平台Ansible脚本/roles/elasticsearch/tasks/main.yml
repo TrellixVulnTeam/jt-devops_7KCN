@@ -1,0 +1,45 @@
+- name: 创建用户组
+  group:
+    name: "{{ es_group }}"
+    state: present
+
+- name: 创建用户
+  user: 
+    group: "{{ es_group }}"
+    name: "{{ es_user }}"
+
+- name: 创建部署目录
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ es_user }}"
+    group: "{{ es_group }}"
+    mode: 0755
+  with_items:
+    - "{{ es_home_dir }}"
+    - "{{ es_data_dir }}"
+    - "{{ es_log_dir }}"
+
+
+- name: 安装elasticsearch
+  shell: "rpm -ivh {{ es_file_path }}/elasticsearch-{{ es_version }}.rpm" 
+  ignore_errors: true
+  
+- name: 部署配置文件
+  template:
+    src: elasticsearch.yml
+    dest: /etc/elasticsearch/elasticsearch.yml
+    owner: "{{ es_user }}"
+    group: "{{ es_group }}"
+
+- name: 启动elasticsearch服务
+  service: name=elasticsearch state=started
+      
+- name: 以轮询的方式等待服务同步完成
+  shell: "systemctl status elasticsearch |grep Active"
+  register: elasticsearch_status
+  until: '"running" in elasticsearch_status.stdout'
+  retries: 8
+  delay: 8
+  tags: upgrade_elasticsearch
+      

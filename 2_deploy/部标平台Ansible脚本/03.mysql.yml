@@ -1,0 +1,22 @@
+- hosts:
+ #   - kube-master
+    - master
+    - slave
+  remote_user: root
+  roles:
+    - { role: mysql, mysql_pass: "gzhXR6d@k*42FV" }
+
+- hosts: 
+    - master
+  roles:
+    - { role: mysql_repl, mysql_replication_role: "master", mysql_pass: "gzhXR6d@k*42FV" }
+  
+- hosts:
+    - slave
+  roles:
+    - { role: mysql_repl, mysql_replication_role: "slave", mysql_pass: "gzhXR6d@k*42FV" }
+
+- hosts:
+    - master
+  roles:
+    - { role: mycat, mysql_version: "1.6", mysql_pass: "gzhXR6d@k*42FV", mycat_pass: "8hA5fFniE0P4MN" }

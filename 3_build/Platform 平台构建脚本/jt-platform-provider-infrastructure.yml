@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jt-platform-provider-infrastructure
+spec:
+  selector:
+    matchLabels:
+      app: jt-platform-provider-infrastructure
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: jt-platform-provider-infrastructure
+    spec:
+      nodeSelector:
+        jtb/role: storage 
+      containers:
+        - name: jt-platform-provider-infrastructure
+          image: harbor.zhkj.com/jtb/jt-platform-provider-infrastructure:1.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 10001
+          env:
+            - name: JAVA_OPTS
+              value: -Xms1024m -Xmx1024m -Xmn512m -Xss512k
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 10001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 10001
+            initialDelaySeconds: 30
+      imagePullSecrets:
+        - name: harbor.jtb
+      hostAliases:
+        - ip: "192.168.0.3"
+          hostnames:
+          - "config.zhkj.com"          # config和eureka会部署为service，因此这里写成web001的地址
+          - "eureka.zhkj.com"
+          - "logstash.zhkj.com"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jt-platform-provider-infrastructure
+  labels:
+    name: jt-platform-provider-infrastructure
+spec:
+  type: NodePort      #这里代表是NodePort类型的
+  ports:
+  - port: 10001       #这里的端口和clusterIP(10.97.114.36)对应，即10.97.114.36:80,供内部访问。
+    targetPort: 10001  #端口和container暴露出来的端口对应
+    protocol: TCP
+    nodePort: 30011
+  selector:
+    app: jt-platform-provider-infrastructure

@@ -1,0 +1,6 @@
+user: admin
+group: admin
+pass: admin
+ssh_port: 22
+port: 3307
+memsql_pass: ""

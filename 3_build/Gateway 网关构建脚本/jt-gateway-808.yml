@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jt-gateway-808
+spec:
+  selector:
+    matchLabels:
+      app: jt-gateway-808
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: jt-gateway-808
+    spec:
+      containers:
+        - name: jt-gateway-808
+          image: harbor.zhkj.com/jtb/jt-gateway-808:1.1.0.BUILD-SNAPSHOT
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 10005
+          env:
+            - name: JAVA_OPTS
+              value: -Xms1024m -Xmx1024m -Xmn512m -Xss512k
+            - name: JT_GATEWAY_SERVICE_IP
+              value: "10.111.30.3"    #与对外暴露的serviceIp一致
+            - name: JT_GATEWAY_SERVICE_PORT
+              value: "30025"    #与对外暴露的servicePort一致
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 10005
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 10005
+            initialDelaySeconds: 30
+          volumeMounts:
+          - name: logback-config-volume
+            mountPath: /etc/jtb/gateway
+      volumes:
+        - name: logback-config-volume
+          configMap:
+            name: logback-config
+      imagePullSecrets:
+        - name: harbor.jtb
+      hostAliases:
+        - ip: "10.111.30.3"
+          hostnames:
+          - "config.zhkj.com"          # config和eureka会部署为service，因此这里写成web001的地址
+          - "eureka.zhkj.com"
+          - "logstash.zhkj.com"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jt-gateway-808
+  labels:
+    name: jt-gateway-808
+spec:
+  type: NodePort      #这里代表是NodePort类型的
+  ports:
+  - name: web
+    port: 10005       #这里的端口和clusterIP(10.97.114.36)对应，即10.97.114.36:80,供内部访问。
+    targetPort: 10005  #端口和container暴露出来的端口对应
+    protocol: TCP
+    nodePort: 30025
+  - name: netty
+    port: 9998       #这里的端口和clusterIP(10.97.114.36)对应，即10.97.114.36:80,供内部访问。
+    targetPort: 9998  #端口和container暴露出来的端口对应
+    protocol: TCP
+    nodePort: 9998
+  selector:
+    app: jt-gateway-808

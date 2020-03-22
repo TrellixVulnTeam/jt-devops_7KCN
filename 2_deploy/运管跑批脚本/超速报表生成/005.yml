@@ -1,0 +1,74 @@
+- hosts: 10.111.29.255
+  remote_user: root
+  vars:
+    dir: /data/jtb/test
+    jar: "test-0.0.1-SNAPSHOT.jar"
+    sh: "run.sh"
+    num_list: "[18,19,20,21,22,23,24,25]"
+  tasks:
+    - name: "mkdir some dir"
+      file: "path={{ dir }}  state=directory mode=0755 recurse=yes"
+    
+    - name: "mkdir other dir"
+      file: "path={{ dir }}/test{{ item }} state=directory mode=0755"
+      with_items: "{{ num_list }}"
+    
+    - name: "mkdir number dir"
+      file: "path=/data/jtb/jao state=directory mode=0755"
+
+    - name: "copy xlsx file"
+      copy: "src=/root/{{ item }}.xlsx dest={{ dir }}/{{ item }}.xlsx"
+      with_items: "{{ num_list }}"
+        
+    - name: "copy and modify name jar"
+      copy: "src=/root/{{ jar }}  dest={{ dir }}/test{{ item}}/test-0.0.1-SNAPSHOT-{{ item }}.jar"
+      with_items: "{{ num_list }}"
+      tags: copy_jar
+      
+    - name: "copy run.sh"
+      copy: "src=/root/{{ sh }}  dest={{ dir }}/test{{ item }}/{{ sh }} mode=0755"
+      with_items: "{{ num_list }}"
+
+    - name: "copy yml"
+      copy: "src=/root/application.yml  dest={{ dir }}/test{{ item }}/application.yml"
+      with_items: "{{ num_list }}"
+
+    - name: "replace some config"
+      lineinfile:
+        path: "{{ dir }}/test{{ item }}/application.yml"
+        regexp: 'readFilePath'
+        line: 'readFilePath: /data/jtb/test/{{ item }}.xlsx'
+      with_items: "{{ num_list }}"
+
+    - name: "replace some name"
+      lineinfile:
+        path: "{{ dir }}/test{{ item }}/application.yml"
+        regexp: 'exportFilePath'
+        line: 'exportFilePath: /data/jtb/{{ item }}/'
+      with_items: "{{ num_list }}"
+
+    - name: "replace some xls"
+      lineinfile:
+        path: "{{ dir }}/test{{ item }}/application.yml"
+        regexp: 'exportFileName'
+        line: 'exportFileName: yg{{ item }}.xlsx'
+      with_items: "{{ num_list }}"
+
+    - name: "replace some port"
+      replace:
+        path: "{{ dir }}/test{{ item }}/application.yml"
+        regexp: '12002'
+        replace: '120{{ item }}'
+      with_items: "{{ num_list }}" 
+
+    - name: "replace some number"
+      lineinfile:
+        path: "{{ dir }}/test{{ item }}/run.sh"
+        regexp: 'i='
+        line: 'i={{ item }}'
+      with_items: "{{ num_list }}" 
+    
+    - name: "start run.sh"
+      shell: "cd {{ dir }}/test{{ item }} && sh run.sh"
+      with_items: "{{ num_list }}"
+      tags: start_run

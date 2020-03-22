@@ -1,0 +1,5 @@
+nginx_file_path: "/root"
+ngix_install_path: "/data/jtb/infra/nginx"
+nginx_version: "1.14.2"
+nginx_user: "nginx"
+nginx_group: "nginx"

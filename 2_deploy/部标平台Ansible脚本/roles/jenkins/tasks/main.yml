@@ -1,0 +1,34 @@
+- name: 创建用户组
+  group: name={{ jenkins_group }} state=present
+
+- name: 创建用户
+  user: name={{ jenkins_user }} groups={{ jenkins_group }}
+
+- name: 创建目录
+  file:
+    name: "{{ item }}"
+    state: directory
+    mode: 0755
+    owner: "{{ jenkins_user }}"
+    group: "{{ jenkins_group }}"
+  with_items:
+    - "{{ jenkins_log_path }}"
+    - "{{ jenkins_home }}"
+
+- name: 安装jenkins
+  shell: "rpm -ivh {{ jenkins_file }}"
+  ignore_errors: true
+
+- name: 部署配置
+  template: src=jenkins dest=/etc/sysconfig/jenkins  backup=yes
+
+- name: 修改启动脚本替换jenkins日志输出路径
+  lineinfile: 
+    path: /etc/init.d/jenkins
+    regexp: '^PARAMS'
+    line: 'PARAMS="--logfile=/data/jtb/logs/jenkins/jenkins.log --webroot=/var/cache/jenkins/war --daemon"'
+    backup: yes
+
+- name: 启动jenkins
+  shell: "/etc/init.d/jenkins start"
+  ignore_errors: true

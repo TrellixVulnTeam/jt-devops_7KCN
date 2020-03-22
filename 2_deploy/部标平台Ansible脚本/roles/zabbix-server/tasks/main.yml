@@ -1,0 +1,136 @@
+- name: "创建用户组"
+  group:
+    name: "{{ zabbix_user }}"
+    state: present
+    
+- name: "创建用户"
+  user:
+    name: "{{ zabbix_user }}"
+    group: "{{ zabbix_group }}"
+    shell: /sbin/nologin
+    
+- name: "创建目录"
+  file:
+    path: "{{ zabbix_path }}"
+    state: directory
+    mode: 0755
+    owner: "{{ zabbix_user }}"
+    group: "{{ zabbix_group }}"
+
+- name: 创建日志目录
+  file: path={{ log_path }} state=directory owner={{ zabbix_user }} group={{ zabbix_group }} mode=0755
+    
+- name: "安装软件"
+  yum:
+    name: "{{ item }}"
+    state: installed
+  with_items:
+    - autoconf
+    - httpd
+    - php
+    - php-mysql
+    - gcc
+    - libxml2-devel
+    - net-snmp-devel
+    - libcurl-devel
+    - libevent-devel
+    - php-gd
+    - php-bcmath
+    - php-mbstring
+    - php-xml
+    - php-ldap
+    
+- name: "配置php服务"
+  copy:
+    src: php.ini
+    dest: /etc/php.ini
+    backup: yes
+    
+- name: "配置httpd服务"
+  copy:
+    src: httpd.conf
+    dest: /etc/httpd/conf/httpd.conf
+    backup: yes
+     
+- name: "启动httpd服务"
+  service:
+    name: httpd
+    state: started
+    enabled: true
+
+- name: "解压zabbix安装包"
+  unarchive:
+    src: "{{ zabbix_file }}"
+    dest: /root
+    creates: "/root/zabbix-{{ zabbix_version }}"
+
+- name: 检测是否编译成功
+  stat: "path={{ zabbix_path }}/sbin/zabbix_server"
+  register: make_install_status
+
+- name: "编译安装zabbix"
+  shell: "cd  /root/zabbix-{{ zabbix_version }}  &&  ./configure --prefix={{ zabbix_path }}  \
+          --sysconfdir=/etc/zabbix/ --enable-server --enable-agent --with-net-snmp --with-libcurl \
+          --with-mysql --with-libxml2 && \
+          make install"
+  when: not make_install_status.stat.exists
+          
+- name: "拷贝server配置文件"
+  template:
+    src: zabbix_server.conf
+    dest: /etc/zabbix/zabbix_server.conf
+    backup: yes
+    
+- name: "拷贝agent配置文件"
+  template:
+    src: zabbix_agentd.conf
+    dest: /etc/zabbix/zabbix_agentd.conf
+    backup: yes
+    
+- name: "设置mysql密码"
+  shell: "mysqladmin -uroot password {{ pass }}"
+  ignore_errors: true
+  
+- name: 建库
+  shell: mysql -uroot -p{{ pass }} -e "create  database {{ database }} character set utf8"
+  ignore_errors: true
+
+- name: 授权用户登录
+  shell: mysql -uroot -p{{ pass }} -e "grant all on zabbix.* to '{{ zabbix_user }}'@'localhost' identified by '{{ zabbix_user }}'"
+  ignore_errors: true
+
+- name: "导入库文件"
+  shell: "cd /root/zabbix-{{ zabbix_version }}/database/mysql && \
+         mysql -u{{ zabbix_user }} -p{{ zabbix_user }} {{ database }} < schema.sql  && \
+         mysql -u{{ zabbix_user }} -p{{ zabbix_user }} {{ database }} < images.sql  && \
+         mysql -u{{ zabbix_user }} -p{{ zabbix_user }} {{ database }} < data.sql"
+  ignore_errors: true
+         
+- name: "配置zabbix服务"
+  template:
+    src: "{{ item }}"
+    dest: /etc/init.d
+    backup: yes
+    mode: 0755
+  with_items:
+    - "zabbix_agentd"
+    - "zabbix_server"
+
+- name: "配置web管理页面"
+  shell: "cp -r /root/zabbix-{{ zabbix_version }}/frontends/php  /var/www/html/zabbix  && \
+          chown -R apache:apache /var/www/html/zabbix && \
+          chmod o+w  /var/www/html/zabbix/conf"
+
+- name: "启动zabbix服务"
+  shell: /etc/init.d/zabbix_server restart  \
+         /etc/init.d/zabbix_agentd restart  
+    
+- name: zabbix_server加入chkconfig管理
+  shell: "chkconfig --add zabbix_server && chkconfig zabbix_server on"
+
+- name: zabbix_agentd加入chkconfig管理
+  shell: "chkconfig --add zabbix_agentd && chkconfig zabbix_agentd on"
+          
+ 
+
+    

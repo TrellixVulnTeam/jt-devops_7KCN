@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-calc-trip
+spec:
+  selector:
+    matchLabels:
+      app: gateway-calc-trip
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: gateway-calc-trip
+    spec:
+      containers:
+        - name: gateway-calc-trip
+          image: harbor.zhkj.com/jtb/gateway-calc-trip:1.1.0.BUILD-SNAPSHOT
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 21002
+          env:
+            - name: JAVA_OPTS
+              value: -Xms1024m -Xmx1024m -Xmn512m -Xss512k
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 21002
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 21002
+            initialDelaySeconds: 30
+          volumeMounts:
+          - name: logback-config-volume
+            mountPath: /etc/jtb/gateway
+      volumes:
+        - name: logback-config-volume
+          configMap:
+            name: logback-config
+      imagePullSecrets:
+        - name: harbor.jtb
+      hostAliases:
+        - ip: "10.111.30.3"
+          hostnames:
+          - "config.zhkj.com"          # config和eureka会部署为service，因此这里写成web001的地址
+          - "eureka.zhkj.com"
+          - "logstash.zhkj.com"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-calc-trip
+  labels:
+    name: gateway-calc-trip
+spec:
+  type: NodePort      #这里代表是NodePort类型的
+  ports:
+  - name: web
+    port: 21002       #这里的端口和clusterIP(10.97.114.36)对应，即10.97.114.36:80,供内部访问。
+    targetPort: 21002  #端口和container暴露出来的端口对应
+    protocol: TCP
+    nodePort: 30032
+  selector:
+    app: gateway-calc-trip

@@ -1,0 +1,30 @@
+- name: "创建目录"
+  file:
+    name: "{{ mycat_path }}"
+    state: directory
+   
+- name: 检测mycat安装包是否存在
+  stat: path={{ mysql_file }}
+  register: mycat_status
+  
+- name: "解压Mycat安装包"
+  unarchive:
+    src: "{{ mycat_file }}"
+    dest: "{{ mycat_path }}"
+    creates: "{{ mycat_path }}/mycat"
+  when: mycat_status.stat.exists
+    
+- name: "拷贝配置文件"
+  template: src={{ item }} dest={{ mycat_path }}/mycat/conf/{{ item }} backup=yes
+  with_items:
+    - "schema.xml"
+    - "server.xml"
+    
+- name: 添加启动脚本
+  copy: src={{ mycat_path }}/mycat/bin/mycat dest=/etc/init.d/mycat mode=0755
+  
+- name: 添加chkconfig管理
+  shell: "chkconfig --add mycat && chkconfig mycat on"
+  
+- name: 添加开机自启动
+  service: name=mycat state=start enabled=yes

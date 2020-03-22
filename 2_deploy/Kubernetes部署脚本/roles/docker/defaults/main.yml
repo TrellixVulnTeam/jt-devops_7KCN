@@ -1,0 +1,20 @@
+# docker日志相关
+LOG_DRIVER: "json-file"
+LOG_LEVEL: "warn"
+LOG_MAX_SIZE: "50m"
+LOG_MAX_FILE: 3
+
+# docker容器存储目录
+STORAGE_DIR: "/data/kubernetes/docker"
+
+# 开启Restful API
+ENABLE_REMOTE_API: false
+
+# 启用 docker 仓库镜像
+ENABLE_MIRROR_REGISTRY: true
+
+# 设置 docker 仓库镜像
+REG_MIRRORS: '["https://dockerhub.azk8s.cn", "https://docker.mirrors.ustc.edu.cn"]'
+
+# docker version
+docker_version: 18.09.7

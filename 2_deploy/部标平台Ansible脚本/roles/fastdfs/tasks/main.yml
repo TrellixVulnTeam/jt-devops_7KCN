@@ -1,0 +1,158 @@
+- name: "创建目录"
+  file:
+    name: "{{ item }}"
+    state: directory
+    mode: 0755
+  with_items:
+    - "{{ fastdfs_install_path }}"
+    - "{{ tracker_path }}"
+    - "{{ storage_path }}"
+
+#- name: 检测安装包是否存在
+#  stat: path={{ fastdfs_file_path }}
+#  register: fastdfs_status
+
+- name: 分发安装包
+  copy: src=/root/{{ item }} dest=/root/{{ item }}
+  with_items:
+    - "{{ fastdfs_file_path }}"
+    - "{{ fastdfs_module_path }}"
+    - "{{ fastdfs_lib_path }}"
+    - "{{ nginx_file_path }}"
+  #when: not fastdfs_status.stat.exists
+  #ignore_errors: true
+
+- name: 解压fastdfs安装包
+  unarchive:
+    src: "/root/{{ fastdfs_file_path }}"
+    dest: "{{ common_path }}"
+    creates: "{{ common_path }}/fastdfs-{{ fastdfs_version }}"
+
+- name: 解压fastdfs模块包
+  unarchive:
+    src: "/root/{{ fastdfs_module_path }}"
+    dest: "{{ common_path }}"
+    creates: "{{ common_path }}/fastdfs-nginx-module-{{ fastdfs_module_version }}"
+
+- name: 解压fastdfs库包
+  unarchive:
+    src: "/root/{{ fastdfs_lib_path }}"
+    dest: "{{ common_path }}"
+    creates: "{{ common_path }}/libfastcommon-{{ fastdfs_lib_version }}"
+
+- name: 解压nginx安装包
+  unarchive:
+    src: "/root/{{ nginx_file_path }}"
+    dest: "/root/"
+    creates: "/root/nginx-{{ nginx_version }}"
+
+- name: "安装依赖包"
+  yum:
+    name: "{{ item }}"
+    state: installed
+  with_items:
+     - libevent
+     - gcc
+     - make
+     - cmake
+     - gcc-c++
+     - zlib-devel
+     - pcre-devel
+     - openssl-devel
+     - openssl
+     
+- name: 检查库文件
+  stat: path=/usr/lib/libfastcommon.so
+  register: lib_path
+  
+- name: "编译安装fastdfs库文件"
+  shell: "cd {{ common_path }}/libfastcommon-{{ fastdfs_lib_version }} && sh make.sh  && \
+          sh ./make.sh install"
+  when: not lib_path.stat.exists
+      
+- name: "编译安装fastdfs"
+  shell: "cd {{ common_path }}/fastdfs-{{ fastdfs_version }} && sh make.sh && \
+           sh make.sh install"
+
+- name: "安装fastdfs_tracker"
+  template:
+    src: tracker.conf
+    dest: "{{ config_path }}/tracker.conf"       
+    
+- name: "安装fastdfs_storage"
+  template:
+    src: storage.conf
+    dest: "{{ config_path }}/storage.conf"
+        
+- name: "安装fastdfsc_client"
+  template:
+    src: client.conf
+    dest: "{{ config_path}}/client.conf" 
+
+- name: "修改nginx扩展模块配置"
+  copy:
+    src: config
+    dest: "{{ common_path }}/fastdfs-nginx-module-{{ fastdfs_module_version }}/src/config"
+    backup: yes
+    
+- name: "修改mod模块关于fastdfs配置"
+  template:
+    src: "mod_fastdfs.conf"
+    dest: "{{ config_path }}/mod_fastdfs.conf"
+    
+- name: "解压Nginx安装包"
+  unarchive:
+    src: "{{ nginx_file_path }}"
+    dest: /root/
+    creates: /root/nginx-{{ nginx_version }}
+    
+- name: 检查nginx是否编译完成
+  stat: path={{ nginx_install_path }}/sbin/nginx
+  register: nginx_status
+
+- name: "编译安装Nginx"
+  shell: "cd /root/nginx-{{ nginx_version }} && ./configure --prefix={{ nginx_install_path }} \  
+          --add-module={{ common_path }}/fastdfs-nginx-module-{{ fastdfs_module_version }}/src  \
+          --user=root --group=root \
+          --with-stream --with-http_ssl_module --with-http_stub_status_module --with-stream_ssl_module && \
+         make && make install"
+  tags: make_install_nginx
+  when: not nginx_status.stat.exists
+  
+- name: "拷贝相关配置"
+  copy:
+    src: "{{ item }}"
+    dest: "{{ config_path }}/{{ item }}"
+  with_items:
+    - "http.conf"
+    - "mime.types"
+    
+- name: "Nginx软连接"
+  file:
+    src: "{{ nginx_install_path }}/sbin/nginx"
+    dest: /sbin/nginx
+    state: link
+    
+- name: "配置文件软连接"
+  file:
+    src: "{{ nginx_install_path }}/conf/nginx.conf"
+    dest: /etc/nginx.conf
+    state: link
+
+- name: 拷贝配置文件
+  template: src=nginx.conf dest={{ nginx_install_path }}/conf/nginx.conf backup=yes
+
+- name: 重启nginx
+  shell: "nginx -s reload"
+
+- name: fdfs_storaged加入chkconfig管理
+  shell: "chkconfig --add fdfs_storaged && chkconfig fdfs_storaged on"
+
+- name: fdfs_trackerd加入chkconfig管理
+  shell: "chkconfig --add fdfs_trackerd && chkconfig fdfs_trackerd on"
+
+- name: 启动fastdfs tracker
+  service: name=fdfs_trackerd  state=started  enabled=true
+
+- name: 启动fastdfs storage
+  service: name=fdfs_storaged  state=started  enabled=true

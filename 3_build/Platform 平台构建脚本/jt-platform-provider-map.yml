@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jt-platform-provider-map
+spec:
+  selector:
+    matchLabels:
+      app: jt-platform-provider-map
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: jt-platform-provider-map
+    spec:
+      containers:
+        - name: jt-platform-provider-map
+          image: harbor.zhkj.com/jtb/jt-platform-provider-map:1.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8091
+          env:
+            - name: JAVA_OPTS
+              value: -Xms1024m -Xmx1024m -Xmn512m -Xss512k
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8091
+            initialDelaySeconds: 90
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8091
+            initialDelaySeconds: 90
+      imagePullSecrets:
+        - name: harbor.jtb
+      hostAliases:
+        - ip: "192.168.0.3"
+          hostnames:
+          - "config.zhkj.com"          # config和eureka会部署为service，因此这里写成web001的地址
+          - "eureka.zhkj.com"
+          - "logstash.zhkj.com"

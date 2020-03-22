@@ -1,0 +1,60 @@
+- hosts: 10.111.30.0
+  remote_user: root
+  vars:
+    dir: /data/jtb/test
+    jar: "platform-provider-terminal-1.0.7.BUILD-SNAPSHOT.jar"
+    sh: "run.sh"
+    num_list: "[39,40,41,42,43,44,45,47,48]"
+  tasks:
+    - name: "mkdir some dir"
+      file: "path={{ dir }}  state=directory mode=0755 recurse=yes"
+    
+    - name: "mkdir other dir"
+      file: "path={{ dir }}/test{{ item }} state=directory mode=0755"
+      with_items: "{{ num_list }}"
+    
+    - name: "copy and modify name jar"
+      copy: "src=/root/{{ jar }}  dest={{ dir }}/test{{ item}}/platform-provider-terminal-1.0.7.BUILD-SNAPSHOT-{{ item }}.jar"
+      with_items: "{{ num_list }}"
+      tags: copy_jar
+
+    - name: "copy run.sh"
+      copy: "src=/root/{{ sh }}  dest={{ dir }}/test{{ item }}/{{ sh }} mode=0755"
+      with_items: "{{ num_list }}"
+
+    - name: "copy yml"
+      copy: "src=/root/application.yml  dest={{ dir }}/test{{ item }}/application.yml"
+      with_items: "{{ num_list }}"
+
+    - name: "replace some port"
+      replace:
+        path: "{{ dir }}/test{{ item }}/application.yml"
+        regexp: '12001'
+        replace: '120{{ item }}'
+      with_items: "{{ num_list }}" 
+
+    - name: "replace some number"
+      lineinfile:
+        path: "{{ dir }}/test{{ item }}/run.sh"
+        regexp: 'number='
+        line: 'number={{ item }}'
+      with_items: "{{ num_list }}" 
+
+    - name: "replace group"
+      replace: 
+        path: "{{ dir }}/test{{ item }}/application.yml"
+        regexp: 'loc_topic1'
+        replace: 'loc_topic{{ item }}'
+      with_items: "{{ num_list }}"
+    
+    - name: "replace group"
+      replace: 
+        path: "{{ dir }}/test{{ item }}/application.yml"
+        regexp: 'testPlatform-locphg1'
+        replace: 'testPlatform-locphg{{ item }}'
+      with_items: "{{ num_list }}"
+
+    - name: "start run.sh"
+      shell: "cd {{ dir }}/test{{ item }} && sh run.sh"
+      with_items: "{{ num_list }}"
+      tags: start_run

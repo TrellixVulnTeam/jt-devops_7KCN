@@ -1,0 +1,21 @@
+es_file_path: "/root"
+es_install_path: "/data/jtb/infra"
+es_config_path: "/etc/elasticsearch/elasticsearch.yml"
+
+es_version: "6.7.0"
+
+es_file: "{{ es_file_path }}/elasticsearch-{{ es_version }}.rpm"
+
+es_user: elasticsearch
+es_group: elasticsearch
+
+es_http_host: "{{ inventory_hostname }}"
+es_http_port: 9200
+
+es_home_dir: "{{ es_install_path }}/es"
+es_data_dir: "{{ es_home_dir }}/data"
+es_log_dir:  "{{ es_home_dir }}/log"
+
+es_cluster_name: "my-application"
+es_node_name: "{{ ansible_fqdn }}"
+es_unicast_hosts: ["{{ ip1 }}:{{ es_http_port }}","{{ ip2 }}:{{ es_http_port }}","{{ ip3 }}:{{ es_http_port }}"]

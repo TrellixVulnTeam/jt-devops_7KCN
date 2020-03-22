@@ -1,0 +1,146 @@
+﻿server:
+  port: 12001
+spring:
+  application:
+    name: providerterminal
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    url: jdbc:mysql://10.111.30.9:3306/car_mp?useUnicode=true&characterEncoding=UTF-8
+    username: root
+    password: TZTUb75yH3
+    driver-class-name: com.mysql.jdbc.Driver
+    druid:
+      initial-size: 1
+      min-idle: 3
+      max-wait: 60000
+      pool-prepared-statements: false
+      validation-query: SELECT 'x'
+      test-on-borrow: false
+      test-on-return: false
+      test-while-idle: true
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 30000
+      max-pool-prepared-statement-per-connection-size: 20
+      max-active: 20
+  cloud:
+    stream:
+      bindings:       
+        locConsumer:
+          destination: loc_topic1
+          content-type: application/json;charset=UTF-8
+          binder: kafka
+          group: testPlatform-locphg1
+          consumer:
+            headerMode: raw
+            max-attempts: 1        
+      binders:
+        kafka:
+          type: kafka
+          environment:
+            spring:
+              cloud:
+                stream:
+                  kafka:
+                    binder:
+                      brokers: 10.111.30.8:9092,10.111.30.9:9092,10.111.30.4:9092
+                      zkNodes: 10.111.30.8:2181,10.111.30.9:2181,10.111.30.4:2181
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://112.33.13.180:40002/eureka/
+  instance:
+    instance-id: ${spring.cloud.client.ipaddress}:${spring.application.name}:${server.port}
+    prefer-ip-address: true
+
+redis:
+  host: 10.111.30.4
+  port: 6379
+  maxIdle: 150
+  maxActive: 1000
+  maxWait: 5000
+  testOnBorrow: true
+  pass: MyCj@tNsldjCfU
+mybatis-plus:
+  mapper-locations: classpath*:/com/**/mapper/*Mapper.xml
+  # 热加载mapper文件
+  refresh: true
+
+management:
+  endpoint:
+    health:
+      show-details: "ALWAYS"
+  endpoints:
+    web:
+      exposure:
+        #公开所有端点
+        include: "*"
+
+jtb:
+  platform:
+    alarm:
+      rules:
+        overParkOnDuty:
+          enabled: true
+        overTransOnDuty:
+          enabled: true
+        overSpeedDefault:
+          enabled: true
+        fatigueDrivingDefault:
+          enabled: false
+        nightProhibited:
+          enabled: true
+        terminalDisconnect:
+          enabled: true
+        roadLimit:
+          enabled: true
+        fatigueDrivingCumulative:
+          enabled: false
+        fatigueDrivingCumulativeWHYG:
+          enabled: true
+        fatigueDrivingDefaultWHYG:
+          enabled: true
+      validateSupplementaryData: false
+      mapSpeedLimit: 60
+  websocket:
+    server-url: http://172.16.4.134:7000
+
+ftp:
+  jt1078:
+    id: 118.178.225.183
+    port: 9121
+    username : ftpuser
+    pwd : 123456
+    path : /opt/jtb/resources/ftp/
+    url : http://localhost:8012/ftpUpload/
+
+amap:
+  road:
+    grasp:
+      url: http://restapi.amap.com/v3/autograsp
+      keys:
+        4c5d024392644d567930e70cb909f86a:
+          invokeLimit: 260000
+          qpsLimit: 160
+        b132e5be6c7ce9c7f34eb0e7efc18cf2:
+          invokeLimit: 260000
+          qpsLimit: 160
+        bb12710bcab2681453e7e97f6f908b07:
+          invokeLimit: 260000
+          qpsLimit: 160
+        506b151ce0c1a6dbb54dae8d5ff5ae7b:
+          invokeLimit: 260000
+          qpsLimit: 160
+        721221afd797847936781f0eb1206319:
+          invokeLimit: 260000
+          qpsLimit: 160
+        9179b5d85be8c6bb830043af96a3638a:
+          invokeLimit: 260000
+          qpsLimit: 160
+        852c11ca35f19c371f821195dde45c31:
+          invokeLimit: 260000
+          qpsLimit: 160
+      rest:
+        template:
+          connectTimeout: 10000
+          readTimeout: 10000

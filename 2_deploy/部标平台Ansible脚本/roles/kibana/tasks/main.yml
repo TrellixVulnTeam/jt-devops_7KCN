@@ -1,0 +1,15 @@
+- name: "安装kibana"
+  shell: "rpm -ivh {{ kibana_path }}"
+  ignore_errors: true
+
+- name: "部署配置文件"
+  template:
+    src: kibana.yml
+    dest: "{{ kibana_config_path }}"
+
+- name: "启动kibana"
+  shell: "systemctl daemon-reload && systemctl restart kibana"
+  
+- name: "设置开机自启动"
+  service: name=kibana enabled=true
+    

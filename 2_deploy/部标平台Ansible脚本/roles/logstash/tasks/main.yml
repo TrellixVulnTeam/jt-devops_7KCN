@@ -1,0 +1,53 @@
+- name: "创建logstash组"
+  group:
+    name: "{{ logstash_group }}"
+    state: present
+
+- name: "创建用户logstash"
+  user:
+    group: "{{ logstash_group }}"
+    name:  "{{ logstash_user }}"
+        
+- name: "创建安装目录"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ logstash_user }}"
+    group: "{{ logstash_group }}"
+    mode: 0755
+  with_items:
+    - "{{ logstash_install_path }}"
+    - "{{ logstash_path }}"
+
+- name: "安装logstash"
+  shell: "rpm -ivh {{ logstash_file }}" 
+  ignore_errors: true
+
+- name: "部署配置文件"
+  template:
+    src: logstash.yml
+    dest: "{{ logstash_config_file }}"
+
+- name: "配置收集日志文件"
+  template:
+    src: jtb.conf
+    dest: "/etc/logstash/conf.d/jtb.conf"
+  notify:
+    - restart logstash service
+
+- name: 分发jvm配置文件
+  template: src=jvm.options.j2 dest=/etc/logstash/jvm.options backup=yes
+  
+- name: "启动logstash"
+  service:
+    name: logstash
+    state: started
+    enabled: true
+    
+- name: "以轮询的方式等待服务同步完成"
+  shell: "systemctl status logstash|grep Active"
+  register: logstash_status
+  until: '"running" in logstash_status.stdout'
+  retries: 8
+  delay: 8
+  tags: update_logstash

@@ -1,0 +1,10 @@
+jenkins_file_path: "/root"
+jenkins_version: "2.180-1"
+jenkins_file: "{{ jenkins_file_path }}/jenkins-{{ jenkins_version }}.1.noarch.rpm"
+
+jenkins_user: "jenkins"
+jenkins_group: "jenkins"
+
+jenkins_home: "/data/jtb/infra/jenkins"
+jenkins_log_path: "/data/jtb/logs/jenkins"
+jenkins_port: 8091

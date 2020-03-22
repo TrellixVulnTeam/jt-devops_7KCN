@@ -1,0 +1,59 @@
+#!/bin/bash
+zk_cmd=/data/jtb/infra/kafka_2.12-2.2.0/bin
+zk_configpath=/data/jtb/infra/kafka_2.12-2.2.0/config/zookeeper.properties
+zk_log=/data/jtb/logs/zookeeper/zookeeper.log
+if [ ! -d ${zk_cmd} ];then
+   exit 1
+fi
+[ -f ${zk_configpath} ] ||  exit 2
+[ -f ${zk_log} ] || touch ${zk_log}
+
+zkstart () {
+   echo "Starting zookeeper..."
+   nohup ${zk_cmd}/zookeeper-server-start.sh ${zk_configpath} > ${zk_log} 2>&1 &
+   sleep 2
+   ps -ef|grep -v grep|grep -w "zookeeper.properties" &> /dev/null
+   RETVAL=$?
+   if [ $RETVAL -eq 0 ];then
+      echo "Zookeeper start successful..."
+   else
+      echo "Zookeeper start failed..."
+   fi
+}
+
+zkstop () {
+   echo "Stopping zookeeper..."
+   ${zk_cmd}/zookeeper-server-stop.sh
+   sleep 2
+   ps -ef|grep -v grep|grep -w "zookeeper.properties" &> /dev/null
+   RETVAL=$?
+   if [ $RETVAL -eq 0 ];then
+      echo "Zookeeper  stoped  successful..."
+   else
+      echo "Zookeeper stoped successful..."
+   fi
+}
+
+zkstatus () {
+   ps -ef|grep -v grep|grep -w "zookeeper.properties" &> /dev/null
+   RETVAL=$?
+   if [ $RETVAL -eq 0 ];then
+      echo "Zookeeper is Running.."
+   else
+      echo "Zookeeper is Stoped"
+   fi
+}
+
+case $1 in
+start)
+    zkstart
+    ;;
+stop)
+    zkstop
+    ;;
+restart)
+    zkstop
+    zkstart;;
+status)
+    zkstatus
+esac

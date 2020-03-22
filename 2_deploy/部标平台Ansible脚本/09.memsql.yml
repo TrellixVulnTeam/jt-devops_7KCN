@@ -1,0 +1,17 @@
+- hosts:
+    - kube-node
+  roles:
+    - { role: memsql, memsql_pass: "v1KaWAU#4r7dLE" ssh_port: "2022" }
+
+- hosts: kube-master
+  remote: admin
+  tasks:
+    - name: "部署集群"
+      shell: "su - {{ user }} && memsql-deploy setup-cluster \ 
+          --high-availability=false --memsql-port {{ port }}  \
+          --file-path /home/admin/memsql-server-6.8.6-5cec6e303c.x86_64.rpm \
+          --license BDZiYWU2ZGZhODhhYzQ0Nzk5ZWQ1YmU0MzQ2NmUwODhiAAAAAAAAAAAEAAAAAAAAAAwwNQIYPNwKJjUHuuZQUyaihg5p87gov8BOErnsAhkA8SL6j52kG1um9Fd2MA4gVDJwyETpizW2AA==  \
+          --master-host {{ ip1 }}:{{ ssh_port }} \
+          --aggregator-hosts {{ ip2 }}:{{ ssh_port }} \
+          --leaf-hosts {{ ip3 }}:{ ssh_port }} \
+          --password {{ memsql_pass }}"

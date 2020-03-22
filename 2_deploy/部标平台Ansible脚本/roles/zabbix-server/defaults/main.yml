@@ -1,0 +1,14 @@
+zabbix_version: 4.0.0
+zabbix_file: "/root/zabbix-{{ zabbix_version }}.tar.gz"
+common_path: "/data/jtb/infra"
+zabbix_path: "{{ common_path }}/zabbix"
+log_path: "/data/jtb/logs/zabbix"
+zabbix_user: zabbix
+zabbix_group: zabbix
+database: zabbix
+pass: "gzhXR6d@k*42FV"
+zabbix_log: /data/jtb/logs/zabbix/zabbix_server.log
+zabbix_pid: /data/jtb/infra/zabbix/zabbix_server.pid
+agent_pid: /data/jtb/infra/zabbix/zabbix_agentd.pid
+agent_log: /data/jtb/logs/zabbix/zabbix_agentd.log
+server_ip: "{{ ip1 }}"

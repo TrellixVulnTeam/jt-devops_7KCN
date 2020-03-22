@@ -1,0 +1,17 @@
+- hosts:
+   - kube-master
+  roles:
+   - { role: zookeeper, myid: 1 when: inventory_hostname not in groups['kube-node]' }
+   - { role: kafka, broker.id: 1 when: inventory_hostname not in groups['kube-node]' }
+
+- hosts:
+   - master
+  roles:
+   - { role: zookeeper, myid: 2 }
+   - { role: kafka, broker.id: 2 }
+
+- hosts:
+   - slave
+  roles:
+   - { role: zookeeper, myid: 3 }
+   - { role: kafka, broker.id: 3 }

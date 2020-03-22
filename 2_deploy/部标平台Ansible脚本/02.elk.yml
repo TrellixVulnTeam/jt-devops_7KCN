@@ -1,0 +1,11 @@
+- hosts:
+    - kube-master
+    - kube-node
+  roles: 
+    - elasticsearch
+    - logstash
+
+- hosts:
+    - kube-master
+  roles:
+    - kibana

@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jt-platform-config-server
+spec:
+  selector:
+    matchLabels:
+      app: jt-platform-config-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: jt-platform-config-server
+    spec:
+      containers:
+        - name: jt-platform-config-server
+          image: harbor.zhkj.com/jtb/jt-platform-config-server:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8001
+          env:
+            - name: JAVA_OPTS
+              value: -Xms512M -Xmx1G
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8001
+            initialDelaySeconds: 25
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8001
+            initialDelaySeconds: 25
+      imagePullSecrets:
+        - name: harbor.jtb
+      hostAliases:
+        - ip: "192.168.0.3"
+          hostnames:
+          # config和eureka会部署为service，因此这里写成web001的地址
+          - "config.zhkj.com"
+          - "eureka.zhkj.com"
+          - "logstash.zhkj.com"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jt-platform-config-server
+  labels:
+    name: jt-platform-config-server
+spec:
+  type: NodePort      #这里代表是NodePort类型的
+  ports:
+  - port: 8001       #这里的端口和clusterIP(10.97.114.36)对应，即10.97.114.36:80,供内部访问。
+    targetPort: 8001  #端口和container暴露出来的端口对应
+    protocol: TCP
+    nodePort: 30001
+  selector:
+    app: jt-platform-config-server

@@ -1,0 +1,6 @@
+mycat_version: "1.6"
+mycat_file: "/root/Mycat-server-{{ mycat_version }}-RELEASE-20161028204710-linux.tar.gz"
+
+mycat_path: "/data/jtb/infra"
+mysql_pass: ""
+mycat_pass: ""

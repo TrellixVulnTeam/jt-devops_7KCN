@@ -1,0 +1,8 @@
+- import_playbook: 001.yml
+- import_playbook: 002.yml
+- import_playbook: 003.yml
+- import_playbook: 004.yml
+- import_playbook: 005.yml
+- import_playbook: 006.yml
+- import_playbook: 007.yml
+- import_playbook: 008.yml

@@ -1,0 +1,4 @@
+- hosts:
+    - slave
+  roles:
+    - { role: redis, redis_pass: "haM7axfAIrQevA" }

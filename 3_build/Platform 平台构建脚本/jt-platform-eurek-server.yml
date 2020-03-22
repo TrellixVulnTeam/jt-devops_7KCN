@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jt-platform-eurek-server
+spec:
+  selector:
+    matchLabels:
+      app: jt-platform-eurek-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: jt-platform-eurek-server
+        module: jt-platform
+    spec:
+      containers:
+        - name: jt-platform-eurek-server
+          image: harbor.zhkj.com/jtb/jt-platform-eurek-server:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8761
+          env:
+            - name: JAVA_OPTS
+              value: -Xms1024m -Xmx1024m -Xmn512m -Xss512k
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8761
+            initialDelaySeconds: 25
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8761
+            initialDelaySeconds: 25
+      imagePullSecrets:
+        - name: harbor.jtb
+      hostAliases:
+        - ip: "192.168.0.3"
+          hostnames:
+          - "config.zhkj.com"          # config和eureka会部署为service，因此这里写成web001的地址
+          - "eureka.zhkj.com"
+          - "logstash.zhkj.com"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jt-platform-eurek-server
+  labels:
+    name: jt-platform-eurek-server
+spec:
+  type: NodePort     
+  ports:
+  - port: 8761      
+    targetPort: 8761  #端口和container暴露出来的端口对应
+    protocol: TCP
+    nodePort: 30002
+  selector:
+    app: jt-platform-eurek-server

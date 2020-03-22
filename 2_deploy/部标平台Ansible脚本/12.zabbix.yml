@@ -1,0 +1,9 @@
+- hosts:
+    - kube-master
+  roles:
+    - zabbix
+    
+- hosts:
+    - kube-node
+  roles:
+    - zabbix-agent

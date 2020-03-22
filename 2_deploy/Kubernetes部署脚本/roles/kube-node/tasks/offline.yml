@@ -1,0 +1,46 @@
+#离线安装haproxy
+- name: 检测haproxy安装包是否存在
+  stat: path="{{ base_dir }}/down/haproxy-{{ HA_VER }}.0.tar.gz" 
+  register: haproxy_status
+
+- name: 下载haproxy
+  get_url:
+    url: https://repo.huaweicloud.com/haproxy/{{ HA_VER }}/src/haproxy-{{ HA_VER }}.0.tar.gz
+    dest: "{{ base_dir }}/down/haproxy-{{ HA_VER }}.0.tar.gz"
+  connection: local
+
+- name: 分发haproxy
+  copy: "src={{ base_dir }}/down/haproxy-{{ HA_VER }}.0.tar.gz dest=/root/haproxy-{{ HA_VER }}.0.tar.gz"
+
+- name: 创建haproxy组
+  group: name=haproxy state=present
+
+- name: 创建haproxy用户
+  user: name=haproxy groups=haproxy  shell=/sbin/nologin
+
+- name: 解压haproxy
+  unarchive: "src=/root/haproxy-{{ HA_VER }}.0.tar.gz dest=/root/"
+  creates: "/root/haproxy-{{ HA_VER }}.0"
+
+- name: 创建目录
+  file: path=/data/jtb/infra/haproxy state=directory
+
+- name: 编译haproxy
+  shell: "cd /root/haproxy-{{ HA_VER }}.0  \
+         && make TARGET=linux2628 ARCH=x86_64 PREFIX=/data/jtb/infra/haproxy \
+         && make install PREFIX=/data/jtb/infra/haproxy"
+
+- name: haproxy做软连接
+  file: src=/data/jtb/infra/haproxy/sbin/haproxy dest=/usr/sbin/haproxy state=link
+
+- name: 创建haproxy配置文件目录
+  file: path=/data/jtb/infra/haproxy/etc/ state=directory
+
+- name: 分发配置文件
+  template: src=haproxy.cfg.j2 dest=/data/jtb/infra/haproxy/etc/haproxy.cfg backup=yes
+
+- name: 配置文件软连接
+  file: src=/data/jtb/infra/haproxy/etc/haproxy.cfg dest=/etc/haproxy.cfg state=link
+
+- name: 启动haproxy
+  shell: haproxy -f /data/jtb/infra/haproxy/etc/haproxy.cfg

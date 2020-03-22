@@ -1,0 +1,6 @@
+# to install docker service
+- hosts:
+  - kube-master
+  - kube-node
+  roles:
+  - { role: docker, docker_version: "18.09.7", when: "CONTAINER_RUNTIME == 'docker'" } 

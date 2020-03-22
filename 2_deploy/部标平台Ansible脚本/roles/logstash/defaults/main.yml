@@ -1,0 +1,19 @@
+logstash_file_path: "/root"
+logstash_install_path: "/data/jtb/infra"
+
+logstash_version: "6.7.0"
+logstash_user: "logstash"
+logstash_group: "logstash"
+
+logstash_file: "{{ logstash_file_path }}/logstash-{{ logstash_version }}.rpm"
+logstash_config_file: "/etc/logstash/logstash.yml"
+logstash_path: "{{ logstash_install_path }}/logstash"
+
+logstash_host: "{{ ansible_eth0['ipv4']['address'] }}"
+http_port: "9600"
+input_port: "9250"
+output_port: "4567"
+es_unicast_hosts: '["{{ ip1 }}","{{ ip2 }}","{{ ip3 }}"]'
+
+logstash_heap_ms: "1g"
+logstash_heap_mx: "1g"
