@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+    options {
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '5')) 
+    }
+    stages {
+        stage('发布服务名称') {
+            steps {
+                sh '''
+                echo ${OPTION}
+                ansible-playbook main.yml --tags output_service -e "svc_name=${SVC_NAME} option=${OPTION}"
+                '''
+            }
+        }
+        stage('拷贝Jar包') {
+            steps {
+                sh '''
+                ansible-playbook main.yml --tags copy_jar -e "svc_name=${SVC_NAME} option=${OPTION} version=${VERSION}"
+                '''
+            }
+        }
+        stage('构建推送镜像') {
+            steps {
+                sh '''
+                ansible-playbook main.yml --tags build_push_image -e "svc_name=${SVC_NAME} version=${VERSION} option=${OPTION}"
+                '''
+            }
+        }
+        stage('更新服务') {
+            steps {
+                sh '''
+                ansible-playbook main.yml --tags update_service -e "svc_name=${SVC_NAME} option=${OPTION}"
+                '''
+            }
+        }
+        stage('清除镜像及Jar包') {
+            steps {
+                sh '''
+                ansible-playbook main.yml --tags delete_image -e "svc_name=${SVC_NAME} version=${VERSION} option=${OPTION}"
+                '''
+            }
+        }
+    }
+}

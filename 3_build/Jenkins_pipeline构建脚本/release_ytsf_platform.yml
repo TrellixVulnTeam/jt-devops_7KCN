@@ -1,0 +1,54 @@
+---
+#wushaoyu
+
+- hosts: ytsf
+  remote_user: root
+  gather_facts: no
+  vars:
+    - harbor_prefix: harbor.zhkj.com/jtb
+    - lib_dir: /opt/build/platform/lib
+    - dst_dir: /opt/build/platform
+    
+  tasks:
+    - name: 发布平台服务-输出发布的服务名称
+      shell: "echo {{ svc_name }}"
+      register: p
+      tags: output_service
+
+    - debug: msg={{ p.stdout }}
+      tags: output_service
+
+    - name: 拷贝Jar包
+      copy: src={{ lib_dir }}/platform-{{ svc_name }}-{{ version }}.jar  dest={{ lib_dir }}/{{ svc_name }}-{{ version }}.jar
+      tags: copy_jar
+      
+    - name: 获取端口号
+      shell: "grep {{ svc_name }} port.log|awk '{print $2}'"
+      register: p_result
+      tags: build_push_image
+
+    - debug: var="p_result.stdout"
+      tags: build_push_image
+    
+    - name: 构建镜像
+      shell: "cd {{ dst_dir }}/lib && \
+              ../bin/build_docker_image.sh {{ svc_name }} {{ version }}  13001"
+      tags: build_push_image 
+  
+    - name: 打标签推送镜像
+      shell: "docker tag  jt-platform-{{ svc_name }}:{{ version }} {{ harbor_prefix }}/jt-platform-{{ svc_name }}:{{ version }} &&  \
+              docker push {{ harbor_prefix }}/jt-platform-{{ svc_name }}:{{ version }}"
+      tags: build_push_image
+
+    - name: 更新服务
+      shell: "kubectl delete -f {{ dst_dir }}/conf/jt-platform-{{ svc_name }}.yml && \
+              kubectl apply  -f {{ dst_dir }}/conf/jt-platform-{{ svc_name }}.yml"
+      #shell: "kubectl apply  -f {{ dst_dir }}/conf/jt-platform-{{ svc_name }}.yml"
+      tags: update_service
+
+    - name: 清除镜像及Jar包
+      shell: "rm -f {{ lib_dir }}/{{ svc_name }}-{{ version }}.jar && \
+              docker rmi jt-platform-{{ svc_name }}:{{ version }} && \
+              docker rmi {{ harbor_prefix }}/jt-platform-{{ svc_name }}:{{ version }}"
+      tags: delete_image
+    

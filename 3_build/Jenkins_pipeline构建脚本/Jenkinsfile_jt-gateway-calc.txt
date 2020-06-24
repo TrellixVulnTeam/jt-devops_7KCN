@@ -1,0 +1,93 @@
+pipeline {
+    agent any
+    environment {
+        HARBOR_PREFIX="harbor.zhkj.com/jtb"
+        GATEWAY_LIB="/opt/build/gateway/lib/"
+        GROUP_NAME="gateway-calc"
+        COMM_DIR="/data/jtb/infra/git/"
+        DEPEND_DIR="/data/jtb/infra/git/jt-gateway"
+    }
+    options {
+        timestamps()
+        // buildDiscarder(logRotator(numToKeepStr: '5'))
+        disableConcurrentBuilds()
+    }
+    stages {
+        stage('获取代码') {
+            steps{
+                git branch: '${tag}', credentialsId: 'a6548da5-8510-4629-9a07-aafc309d1b86', url: 'http://git.zanclick.cn/jtb/jtb-gateway/jt-gateway-calc.git'
+            }
+        }
+        stage('检测发布服务名称'){
+            steps{
+                sh  '''
+                if [[ ${SVC_NAME} = None ]];then
+                    echo ${SVC_NAME}
+                    err "[ERROR] 必须通过Jt-gateway代码质量分析项目来触发构建发布此项目"   
+                fi'''
+            }
+        }
+        stage('是否编译jt-gateway-core项目)') {
+            steps {
+                println "${IF_RUN}"
+            }
+        }
+        stage('基础依赖服务打包'){
+            steps{
+                script {
+                    if ( params.IF_RUN == 'yes' ) {
+                        println "[INFO]开始编译jt-gateway项目..."
+                        dir("${COMM_DIR}/jt-gateway"){
+                            sh '''git pull http://git.zanclick.cn/jtb/jtb-gateway/jt-gateway.git
+                            mvn clean &&  mvn install'''
+                            println "[INFO]jt-gateway编译完成..."
+                        }
+                    } else {
+                        println "[WARN]跳过编译jt-gateway项目..."
+                    }
+                }
+            }
+        }
+        stage('发布服务打包'){
+            steps{
+                sh  '''
+                VERSION=$(grep version pom.xml |awk -F '[<>]' 'NR==2{print $3}')
+                cd gateway-calc-core
+                mvn clean && mvn install
+                cd ../gateway-calc-app/${GROUP_NAME}-${SVC_NAME}
+                mvn clean && mvn install
+                cp ./target/${GROUP_NAME}-${SVC_NAME}-$VERSION.jar  ${GATEWAY_LIB}
+                '''
+            }
+        }
+        stage('构建推送镜像'){
+            steps{
+                sh '''
+                VERSION=$(grep version pom.xml |awk -F '[<>]' 'NR==2{print $3}')
+                PORT=$(grep ${SVC_NAME} ${WORKSPACE}/port.txt|awk '{print $NF}')
+                cd ${GATEWAY_LIB}
+                ../bin/build_and_push_image.sh ${GROUP_NAME}  ${SVC_NAME} $VERSION  $PORT
+                '''
+            }
+        }
+        stage('清除镜像'){
+            steps{
+                sh '''
+                VERSION=$(grep version pom.xml |awk -F '[<>]' 'NR==2{print $3}')
+                docker rmi ${GROUP_NAME}-${SVC_NAME}:${VERSION}
+                docker rmi harbor.zhkj.com/jtb/${GROUP_NAME}-${SVC_NAME}:${VERSION}'''
+            }
+        }
+        stage('发布服务'){
+            steps{
+                sh '''
+                VERSION=$(grep version pom.xml |awk -F '[<>]' 'NR==2{print $3}')
+                cd ${GATEWAY_LIB}
+                version=$(grep -w image ../conf/${GROUP_NAME}-${SVC_NAME}.yml |awk -F: '{print $NF}')
+                kubectl delete -f  ../conf/${GROUP_NAME}-${SVC_NAME}.yml
+                kubectl apply -f  ../conf/${GROUP_NAME}-${SVC_NAME}.yml
+                '''
+            }
+        }
+    }
+}

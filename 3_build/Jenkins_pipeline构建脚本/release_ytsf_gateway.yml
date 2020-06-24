@@ -1,0 +1,53 @@
+---
+#wushaoyu
+
+- hosts: ytsf
+  remote_user: root
+  gather_facts: no
+  vars:
+    - harbor_prefix: harbor.zhkj.com/jtb
+    - lib_dir: /opt/build/gateway/lib
+    - dst_dir: /opt/build/gateway
+    
+  tasks:
+    - name: 发布网关服务-输出发布的服务名称
+      shell: "echo {{ svc_name }}"
+      register: p
+      tags: output_service
+
+    - debug: msg={{ p.stdout }}
+      tags: output_service
+
+    - name: 拷贝jar包
+      copy: src={{ lib_dir }}/{{ svc_name }}-{{ version }}.jar  dest={{ lib_dir }}/{{ svc_name }}-{{ version }}.jar
+      tags: copy_jar
+      
+    - name: 获取端口号
+      shell: "grep {{ svc_name }} port.log|awk '{print $2}'"
+      register: p_result
+      tags: build_push_image
+
+    - debug: var="p_result.stdout"
+      tags: build_push_image
+    
+    - name: 构建镜像
+      shell: "cd {{ dst_dir }}/lib && \
+              ../bin/build_and_push_image.sh {{ svc_name }} {{ version }}  10010,9995"
+      tags: build_push_image 
+  
+    - name: 打标签推送镜像
+      shell: "docker tag  {{ svc_name }}:{{ version }} {{ harbor_prefix }}/{{ svc_name }}:{{ version }} &&  \
+              docker push {{ harbor_prefix }}/{{ svc_name }}:{{ version }}"
+      tags: build_push_image
+
+    - name: 更新服务
+      shell: "kubectl delete -f {{ dst_dir }}/conf/{{ svc_name }}.yml && \
+              kubectl apply  -f {{ dst_dir }}/conf/{{ svc_name }}.yml"
+      #shell: "kubectl apply -f {{ dst_dir }}/conf/{{ svc_name }}.yml"
+      tags: update_service
+
+    - name: 清除镜像
+      shell: "docker rmi {{ svc_name }}:{{ version }} && \
+              docker rmi {{ harbor_prefix }}/{{ svc_name }}:{{ version }} && \
+              rm -f {{ lib_dir }}/{{ svc_name }}-{{ version }}.jar"
+      tags: delete_image

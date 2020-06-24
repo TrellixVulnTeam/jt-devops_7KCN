@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitor-sa
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: monitor
+  namespace: monitor-sa
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: monitor-clusterrolebinding
+  namespace: monitor-sa
+subjects:
+- kind: ServiceAccount
+  name: monitor
+  namespace: monitor-sa
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin

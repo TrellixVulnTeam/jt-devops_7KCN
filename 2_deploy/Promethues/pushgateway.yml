@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pushgateway
+  namespace: monitor-sa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pushgateway
+  template:
+    metadata:
+      labels:
+        app: pushgateway
+    spec:
+      containers:
+        - name: pushgateway
+          image: prom/pushgateway:v1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9091
+      imagePullSecrets:
+        - name: harbor.jtb
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pushgateway
+  namespace: monitor-sa
+  labels:
+     app: pushgateway
+spec:
+  type: NodePort
+  ports:
+  - port: 9091
+    targetPort: 9091
+    protocol: TCP
+    nodePort: 9093
+  selector:
+    app: pushgateway
