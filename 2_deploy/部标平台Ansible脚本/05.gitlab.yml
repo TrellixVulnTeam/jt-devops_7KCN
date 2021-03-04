@@ -1,0 +1,41 @@
+---
+- hosts: localhost
+  remote_user: root
+  vars:
+    ssh_port: 2222
+    ssl_port: 4443
+    http_port: 8888
+    gitlab_home: "/data/jtb/infra/gitlab"
+    private_url: "http://112.33.33.37:63030/jt-platform-package/gitlab.tar"
+    soft_path: "/data/soft"
+  tasks:
+    - name: 创建目录
+      file:
+        name: "{{ item }}"
+        state: directory
+        mode: 0755
+      connection: local
+      with_items:
+        - "{{ gitlab_home }}"
+        - "{{ gitlab_home }}/config"
+        - "{{ gitlab_home }}/data"
+        - "{{ gitlab_home }}/logs"
+        - "{{ soft_path }}"
+
+    - name: 下载Gitlab镜像
+      get_url: url={{ private_url }}  dest={{ soft_path }}
+      connection: local
+
+    - name: 验证Docker服务
+      shell: "systemctl status docker|grep running"
+      connection: local
+      register: result
+
+    - name: 安装Gitlab
+      shell: "docker run -d -p {{ ssh_port }}:22 {{ ssl_port }}:443 {{ http_port }}:80 \
+                --name gitlab --restart always \
+                -v {{ gitlab_home }}/config:/etc/gitlab \
+                -v {{ gitlab_home }}/data:/var/opt/gitlab \
+                -v {{ gitlab_home }}/logs:/var/log/gitlab  gitlab/gitlab-ce:latest"
+      connection: local
+      when: result.rc == 0

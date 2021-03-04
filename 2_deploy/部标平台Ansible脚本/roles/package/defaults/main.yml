@@ -1,0 +1,25 @@
+---
+#wushaoyu
+
+kafka_version: "2.12-2.2.0"
+elk_version: "6.7.0"
+nginx_version: "1.14.2"
+mysql_version: "5.6.34"
+dble_version: "2.19.07"
+redis_version: "5.0.5"
+
+soft_dir: "/data/soft"
+private_url: "http://112.33.33.37:63030/jt-platform-package"
+
+kafka_file: "kafka_{{ kafka_version }}.tgz"
+kibana_file: "kibana-{{ elk_version }}-x86_64.rpm"
+es_file: "elasticsearch-{{ elk_version }}.rpm"
+logstash_file: "logstash-{{ elk_version }}.rpm"
+nginx_file: "nginx-{{ nginx_version }}.tar.gz"
+mysql_file: "MySQL-{{ mysql_version }}-1.el7.x86_64.rpm-bundle.tar"
+dble_file: "actiontech-dble-{{ dble_version }}.0.tar.gz"
+redis_file: "redis-{{ redis_version }}.tar.gz"
+fastdfs_file: "fastdfs-5.11.tar.gz"
+fastdfs_module_file: "fastdfs-nginx-module-1.20.tar.gz"
+fastdfs_lib_file: "libfastcommon-1.0.39.tar.gz"
+java_file: "jdk-8u201-linux-x64.tar.gz"

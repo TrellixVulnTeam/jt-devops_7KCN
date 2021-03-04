@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitor-sa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      nodeName: 192.168.2.4
+      containers:
+      - image: grafana/grafana:v7.0.0
+        name: grafana
+        ports:
+        - containerPort: 3000
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - mountPath: /var/lib/grafana
+          subPath: grafana
+          name: grafana-storage
+          readOnly: false
+      #securityContext:
+        #runAsUser: 0
+        #runAsNonRoot: true
+        #runAsUser: 65534
+        #runAsUser: 472
+        #fsGroup: 472 
+      serviceAccountName: monitor
+      volumes:
+      - name: grafana-storage
+      #  emptyDir: {}
+        hostPath:
+          path: /data/jtb/infra/grafana-storage
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    kubernetes.io/name: grafana
+  name: grafana
+  namespace: monitor-sa
+spec:
+  ports:
+  - port: 80
+    targetPort: 3000
+    nodePort: 9095
+  selector:
+    app: grafana
+  type: NodePort

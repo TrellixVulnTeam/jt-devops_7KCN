@@ -1,0 +1,14 @@
+[Unit]
+Description=xxl-job
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/data/jtb/infra/xxl-job/bin/run  start
+ExecReload=/data/jtb/infra/xxl-job/bin/run restart
+ExecStop=/data/jtb/infra/xxl-job/bin/run   stop
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+

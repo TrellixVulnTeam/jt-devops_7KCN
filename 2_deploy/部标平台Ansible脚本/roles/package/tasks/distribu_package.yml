@@ -1,0 +1,36 @@
+---
+#wushaoyu
+
+- name: 分发JDK基础安装包
+  copy: "src={{ soft_dir }}/{{ java_file }} dest={{ soft_dir }}/{{ java_file }}"
+  when: "inventory_hostname != groups['kube-master'][0]"
+
+- name: 分发kafka安装包
+  copy: "src={{ soft_dir }}/{{ kafka_file_ }}   dest={{ soft_dir }}/{{ kafka_file }}"
+  when: "inventory_hostname in groups['kafka-nodes']"
+
+- name: 分发es/logstash安装包
+  copy: "src={{ soft_dir }}/{{ item }} dest={{ soft_dir }}/{{ item }}"
+  with_items:
+    - "{{ es_file }}"
+    - "{{ logstash_file }}"
+  when: "inventory_hostname in groups['es-nodes']"
+
+- name: 分发nginx安装包
+  copy: "src={{ soft_dir }}/{{ nginx_file }} dest={{ soft_dir }}/{{ nginx_file }}"
+  when: "inventory_hostname in groups['slave']"
+
+- name: 分发fastdfs安装包
+  copy: "src={{ soft_dir }}/{{ item }} dest={{ soft_dir }}/{{ item }}"
+  with_items:
+    - "{{ fastdfs_file }}"
+    - "{{ fastdfs_module_file }}"
+    - "{{ fastdfs_lib_file }}"
+  when: "inventory_hostname in groups['slave']"
+
+- name: 分发redis/mysql安装包
+  copy: "src={{ soft_dir }}/{{ redis_file }} dest={{ soft_dir }}/{{ redis_file }}"
+  with_items:
+    - "{{ redis_file }}"
+    - "{{ mysql_file }}"
+  when: "inventory_hostname in groups['master'] or inventory_hostname in groups['slave']"

@@ -1,6 +1,7 @@
 #!/bin/bash
 TARGET_PATH=/data/jtb/infra/git/jt-platform
-#OLD_VERSION=`grep "</version>" $TARGET_PATH/pom.xml |awk -F '[<>]' 'NR==1{print $3}'`
+COMMONS_PATH=/data/jtb/infra/git/jt-commons
+CORE_PATH=/data/jtb/infra/git/jt-platform-core
 NEW_VERSION=$1
 BRANCH=1.0.x
 TIME=`date +%Y%m%d`
@@ -8,6 +9,7 @@ URL=http://git.zanclick.cn/jtb/jtb-platform/jt-platform.git
 
 check_basic () {
   if [ -e ${TARGET_PATH} ];then
+    echo ${TARGET_PATH} && \
     rm -rf ${TARGET_PATH}
   fi
   if [ -z ${NEW_VERSION} ];then
@@ -36,10 +38,35 @@ replace_version () {
     fi
 }
 
+replace_depend_version () {
+  echo "Begin update jt-commons/jt-platfomre-core项目依赖版本"
+  cd ${TARGET_PATH} && \
+  commons_version=`grep "<jt-commons"  pom.xml|awk -F '[<>]'  '{print $3}'`
+  core_version=`grep "<jt-platform-core"  pom.xml|awk -F '[<>]'  '{print $3}'`
+
+  cd ${COMMONS_PATH} && \ 
+  git checkout 1.1.x && \
+  Commons_version=`grep "<version>" pom.xml |awk -F '[<>]' 'NR==1{print $3}'`
+  if [ ${commons_version} == ${Commons_version} ];then
+     echo "依赖项目版本号一直，不需要修改..."
+  else
+     sed -i "s;${commons_version};${Commons_version};" ${TARGET_PATH}/pom.xml
+  fi
+  #cd ${CORE_PATH}
+  #git checkout 1.1.x && \
+  #Core_version=`grep "<version>" pom.xml |awk -F '[<>]' 'NR==1{print $3}'`
+  #if [ ${core_version} == ${Core_version} ];then
+  #   echo "依赖项目版本号一直，不需要修改..."
+  #else
+  #   sed -i "s;${core_version};${Core_version};" ${TARGET_PATH}/pom.xml
+  #fi
+  echo "Update jt-commons/jt-platfomre-core项目依赖版本 finished"
+}
+
 mvn_compile () {
   cd ${TARGET_PATH} && \
   mvn clean  && \
-  mvn install 
+  mvn install -Dmaven.test.skip=true 
   result=$?
   if [ ${result} -eq 0 ];then
     echo "Mvn compile and build ${NEW_VERSION} version  successful"
@@ -58,14 +85,20 @@ git_operation () {
   #git tag -a "${NEW_VERSION}" -m "${NEW_VERSION}" && \   #打标签及备注
   #git push origin ${NEW_VERSION}  && \                   #将本地tag推向远程仓库，默认提交git push时，标签及合并的分支不会推向远程仓库
   git checkout ${BRANCH} && \                            #切换分支
-  git reset --hard HEAD && \
-  git pull   && \
+  #git reset --hard HEAD && \
+  #git pull   && \
   git merge master && \                                  #合并master分支到1.0.x
   git push origin ${BRANCH}                          #将本地新合并的1.0.x分支推向远程仓库,默认提交git push时，标签及合并的分支不会推向远程仓库,否则在后面修改开发版本提交时会出现冲突
 }
 
-
+main () {
 check_basic && \
 replace_version && \
-mvn_compile && \
+replace_depend_version && \
+mvn_compile
 git_operation
+}
+
+
+
+main

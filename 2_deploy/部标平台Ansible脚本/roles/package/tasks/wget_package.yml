@@ -1,0 +1,28 @@
+---
+#wushaoyu
+
+- name: mkdir soft dir
+  file: path={{ soft_dir }}  state=directory
+  #connection: local
+
+- name: wget elk package
+  get_url: "url=https://repo.huaweicloud.com/{{ item.name }}/{{ elk_version }}/{{ item.soft }}  dest={{ soft_dir }}/{{ item.soft }}"
+  connection: local
+  with_items:
+    - {'name':'kibana','soft':'{{ kibana_file }}'}
+    - {'name':'elasticsearch','soft':'{{ es_file }}'}
+    - {'name':'logstash','soft':'{{ logstash_file }}'}
+
+- name: wget private package
+  get_url: "url={{ private_url }}/{{ item }} dest={{ soft_dir }}"
+  connection: local
+  with_items:
+    - "{{ kafka_file }}"
+    - "{{ nginx_file }}"
+    - "{{ mysql_file }}"
+    - "{{ dble_file }}"
+    - "{{ redis_file }}"
+    - "{{ fastdfs_file }}"
+    - "{{ fastdfs_module_file }}"
+    - "{{ fastdfs_lib_file }}"
+    - "{{ java_file }}"

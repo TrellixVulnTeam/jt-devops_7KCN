@@ -1,0 +1,5 @@
+- import_playbook: ter_003.yml
+- import_playbook: ter_004.yml
+- import_playbook: ter_005.yml
+- import_playbook: ter_006.yml
+- import_playbook: ter_007.yml

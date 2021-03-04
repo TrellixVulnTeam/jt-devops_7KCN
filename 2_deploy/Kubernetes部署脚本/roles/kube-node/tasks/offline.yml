@@ -20,7 +20,7 @@
 
 - name: 解压haproxy
   unarchive: "src=/root/haproxy-{{ HA_VER }}.0.tar.gz dest=/root/"
-  creates: "/root/haproxy-{{ HA_VER }}.0"
+  #creates: "/root/haproxy-{{ HA_VER }}.0"
 
 - name: 创建目录
   file: path=/data/jtb/infra/haproxy state=directory

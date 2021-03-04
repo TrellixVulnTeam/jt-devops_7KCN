@@ -1,8 +1,8 @@
 mysql_pass: ""
 mysql_replication_user: {name: 'repluser', password: 'repluser'}
-mysql_replication_host: ''
+mysql_replication_host: "{{ groups['slave'][0] }}"
 mysql_replication_master_port: 3306
-mysql_replication_master: '{{ ip2 }}'
+mysql_replication_master: "{{ groups['master'][0] }}"
 mysql_replication_role: ''
 mysql_cnf: "/etc/my.cnf"
 mysql_sock: "/data/jtb/infra/mysql/mysql.sock"

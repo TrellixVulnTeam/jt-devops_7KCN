@@ -19,16 +19,33 @@
     - "{{ es_home_dir }}"
     - "{{ es_data_dir }}"
     - "{{ es_log_dir }}"
+    - "{{ es_log_path }}"
 
+- name: 检测安装包是否存在
+  stat: path={{ es_file }}
+  register: es_package
+
+- name: 下载安装包
+  get_url: url=https://repo.huaweicloud.com/elasticsearch/{{ es_version }}/elasticsearch-{{ es_version }}.rpm  dest={{ soft_path }}/elasticsearch-{{ es_version }}.rpm
+  when: not es_package.stat.exists
 
 - name: 安装elasticsearch
-  shell: "rpm -ivh {{ es_file_path }}/elasticsearch-{{ es_version }}.rpm" 
+  shell: "cd {{ soft_path }} && rpm -ivh {{ es_file_path }}/elasticsearch-{{ es_version }}.rpm" 
   ignore_errors: true
   
-- name: 部署配置文件
+- name: 部署服务配置文件
   template:
-    src: elasticsearch.yml
+    src: elasticsearch.yml.j2
     dest: /etc/elasticsearch/elasticsearch.yml
+    owner: "{{ es_user }}"
+    group: "{{ es_group }}"
+  tags: config_file
+
+
+- name: 部署JVM配置文件
+  template:
+    src: jvm.options.j2
+    dest: /etc/elasticsearch/jvm.options
     owner: "{{ es_user }}"
     group: "{{ es_group }}"
 
@@ -42,4 +59,3 @@
   retries: 8
   delay: 8
   tags: upgrade_elasticsearch
-      

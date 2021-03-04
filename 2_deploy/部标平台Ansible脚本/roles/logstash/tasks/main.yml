@@ -19,9 +19,33 @@
     - "{{ logstash_install_path }}"
     - "{{ logstash_path }}"
 
+- name: 检测安装包是否存在
+  stat: path={{ logstash_file }}
+  register: logstash_package
+
+- name: 下载安装包
+  get_url: url=https://repo.huaweicloud.com/logstash/{{ logstash_version }}/logstash-{{ logstash_version }}.rpm  dest={{ soft_path }}/logstash-{{ logstash_version }}.rpm
+  when: not logstash_package.stat.exists
+
 - name: "安装logstash"
-  shell: "rpm -ivh {{ logstash_file }}" 
+  shell: "cd {{ soft_path }} && rpm -ivh {{ logstash_file }}" 
   ignore_errors: true
+
+- name: 添加节点1域名解析
+  lineinfile:
+    path: "/etc/hosts"
+    line: "{{ groups['es-nodes'][0] }} es1.zhkj.com"
+
+- name: 添加节点2域名解析
+  lineinfile:
+    path: "/etc/hosts"
+    line: "{{ groups['es-nodes'][1] }} es2.zhkj.com"
+
+- name: 添加节点3域名解析
+  lineinfile:
+    path: "/etc/hosts"
+    line: "{{ groups['es-nodes'][2] }} es3.zhkj.com"
+
 
 - name: "部署配置文件"
   template:
@@ -32,8 +56,6 @@
   template:
     src: jtb.conf
     dest: "/etc/logstash/conf.d/jtb.conf"
-  notify:
-    - restart logstash service
 
 - name: 分发jvm配置文件
   template: src=jvm.options.j2 dest=/etc/logstash/jvm.options backup=yes

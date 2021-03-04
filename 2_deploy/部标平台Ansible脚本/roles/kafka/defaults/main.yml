@@ -1,15 +1,19 @@
 kafka_install_path: "/data/jtb/infra/kafka"
 common_path: "/data/jtb/infra"
+bin_path: "/data/jtb/bin"
+kafka_log_path: "/data/jtb/logs/kafka"
+soft_path: "/data/soft"
 
 kafka_version: "2.12-2.2.0"
 kafka_config_path: "{{ common_path }}/kafka_{{ kafka_version }}/config/server.properties"
 
-kafka_log_path: "/data/jtb/logs/kafka"
 kafka_port: 9092
 kafka_start_cmd: "{{ common_path }}/kafka_{{ kafka_version }}/bin/kafka-server-start.sh"
 kafka_stop_cmd: "{{ common_path }}/kafka_{{ kafka_version }}/bin/kafka-server-stop.sh"
 
-kafka_ip: "{{ ansible_eth0['ipv4']['address'] }}"
-zk_list: "{{ ip1 }}:2181,{{ ip2 }}:2181,{{ ip3 }}:2181"
-broker.id: ""
+zk_node1: "{{ groups['kafka-nodes'][0] }}"
+zk_node2: "{{ groups['kafka-nodes'][1] }}"
+zk_node3: "{{ groups['kafka-nodes'][2] }}"
+zk_list: "{{ zk_node1 }}:2181,{{ zk_node2 }}:2181,{{ zk_node3 }}:2181"
+id: ""
 

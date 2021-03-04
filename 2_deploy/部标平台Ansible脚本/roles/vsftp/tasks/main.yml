@@ -1,0 +1,31 @@
+- name: "创建用户组"
+  group:
+    name: "{{ ftp_user }}"
+    state: present
+
+- name: "创建用户"
+  user:
+    name: "{{ ftp_user }}"
+    group: "{{ftp_user }}"
+    home: "{{ ftp_home }}"
+    shell: /bin/bash
+    
+- name: "设置用户密码"
+  user: name={{ ftp_user }} state=present password={{ ftp_pass }}
+ 
+- name: "安装vsftpd服务"
+  yum:
+    name: 
+      - vsftpd
+      - ftp
+    state: present
+    
+- name: "拷贝配置文件"
+  copy:
+    src: vsftpd.conf
+    dest: /etc/vsftpd/vsftpd.conf
+    backup: yes
+    
+- name: 启动ftp
+  service: name=vsftpd state=started enabled=true
+  ignore_errors: true

@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skywalking-oap-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skywalking-oap-server
+  template:
+    metadata:
+      labels:
+        app: skywalking-oap-server
+    spec:
+      nodeName: 10.111.30.8
+      containers:
+        - name: skywalking-oap-server
+          image: harbor.zhkj.com/jtb/skywalking-oap-server:6.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 11800
+              name: grpc
+            - containerPort: 12800
+              name: rest
+#          volumeMounts:
+#            - name: config
+#              mountPath: /skywalking/config
+      imagePullSecrets:
+        - name: harbor.jtb
+#      volumes:
+#        - name: config
+#          configMap:
+#           name: oap-config
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: skywalking-oap-server
+spec:
+  type: NodePort
+  ports:
+  - name: grpcporst
+    nodePort: 31800
+    port: 11800
+    protocol: TCP
+    targetPort: 11800
+  - name: restport
+    nodePort: 32100
+    port: 12800
+    protocol: TCP 
+    targetPort: 12800
+  selector:
+    app: skywalking-oap-server

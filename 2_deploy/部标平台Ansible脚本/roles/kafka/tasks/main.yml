@@ -1,10 +1,11 @@
-- name: "创建目录"
+- name: 创建目录
   file:
     path: "{{ item }}"
     state: directory
   with_items:
     - "{{ kafka_install_path }}"
     - "{{ kafka_log_path }}"
+    - "{{ bin_path }}"
 
 - name: "部署配置文件"
   template:
@@ -13,28 +14,28 @@
     backup: yes
 
 - name: "部署启动脚本"
-    copy: 
-      src: {{ base_dir }}/shell/kafka
-      dest: /data/jtb/bin/kafka
-      mode: 0755
+  copy: 
+    src: "/data/ansible/shell/kafka"
+    dest: "{{ bin_path }}/kafka"
+    mode: 0755
       
-- name: "启动脚本配置软连接"
-    file:
-      src: /data/jtb/bin/kafka
-      dest: /etc/init.d/kafka
-      state: link
-
+#- name: "启动脚本配置软连接"
+#  file:
+#    src: "{{ bin_path }}/kafka"
+#    dest: /etc/init.d/kafka
+#    state: link
 
 - name: "启动服务"
   shell: "nohup {{ kafka_start_cmd }} {{ kafka_config_path }} > {{ kafka_log_path }}/kafka.log 2>&1 &" 
   tags: start_kafka
   
-- name: 添加chkconfig管理
-  shell: "chkconfig --add kafka && chkconfig kafka on"
+#- name: 添加chkconfig管理
+#  shell: "chkconfig --add kafka && chkconfig kafka on"
   
 - name: 以轮询的方式等待服务全部启动
-  shell: "/etc/init.d/kafka status|grep running"
+  shell: "{{ bin_path }}/kafka status|grep Running"
   register: kafka_status
-  until: '"running" in kafka_status.stdout'
-  retries: 8
-  delay: 8
+  until: '"Running" in kafka_status.stdout'
+  retries: 3
+  delay: 3
+  tags: start_kafka

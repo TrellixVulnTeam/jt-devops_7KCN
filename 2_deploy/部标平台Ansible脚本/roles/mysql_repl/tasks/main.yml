@@ -1,14 +1,14 @@
----
-- name: 主库创建主从同步用户
-  mysql_user:
-    login_user: root
-    login_password: "{{ mysql_pass }}"
-    login_host: "{{ ip2 }}"
-    name: "{{ mysql_replication_user.name }}"
-    host: "{{ mysql_replication_user.host | default('%') }}"
-    password: "{{ mysql_replication_user.password }}"
-    priv: "{{ mysql_replication_user.priv |default('*.*:REPLICATION SLAVE') }}"
-  when: mysql_replication_role == "master"
+#- name: 主库创建主从同步用户
+#  mysql_user:
+#    login_user: root
+#    login_password: "{{ mysql_pass }}"
+#    login_host: "{{ inventory_hostname }}"
+#    name: "{{ mysql_replication_user.name }}"
+#    host: "{{ mysql_replication_host | default('%') }}"
+#    password: "{{ mysql_replication_user.password }}"
+#    priv: "{{ mysql_replication_priv |default('*.*:REPLICATION SLAVE') }}"
+#    state: present
+#  when: mysql_replication_role == "master"
 
 - name: 添加主库配置
   lineinfile: path={{ mysql_cnf }} regexp={{ item.r }} line={{ item.s }}
@@ -19,7 +19,7 @@
   when: mysql_replication_role == "master"
 
 - name: 重启mysql
-  shell: "/etc/init.d/mysqld restart"
+  service: name=mysql state=restarted
   when: mysql_replication_role == "master"
 
 - name: 添加从库配置
@@ -31,11 +31,11 @@
   when: mysql_replication_role == "slave"
 
 - name: 重启从库mysql
-  shell: "/etc/init.d/mysqld restart"
+  service: name=mysql state=restarted
   when: mysql_replication_role == "slave"
 
 - name: 获取主节点偏移量
-  mysql_replication: login_user=root login_password={{ mysql_pass }} login_host={{ ip2 }} mode=getmaster config_file={{ mysql_cnf }}
+  mysql_replication: login_user=root login_password={{ mysql_pass }} login_host={{ mysql_replication_master }} mode=getmaster config_file={{ mysql_cnf }}
   delegate_to: "{{ mysql_replication_master }}"
   register: repl_master_status
   when: mysql_replication_role == "slave"
@@ -61,11 +61,11 @@
   when : mysql_replication_role == "slave"
 
 - name: 启动replication
-  mysql_replication: login_user=root login_password={{ mysql_pass }} login_host={{ ip3 }} mode=startslave config_file= {{ mysql_cnf }}
+  mysql_replication: login_user=root login_password={{ mysql_pass }} login_host={{ mysql_replication_host }} mode=startslave config_file= {{ mysql_cnf }}
   when : mysql_replication_role == "slave"
 
 - name: 获取同步信息
-  mysql_replication: login_user=root login_password={{ mysql_pass }} login_host={{ ip3 }} mode=getslave config_file= {{ mysql_cnf }}
+  mysql_replication: login_user=root login_password={{ mysql_pass }} login_host={{ mysql_replication_host }} mode=getslave config_file= {{ mysql_cnf }}
   ignore_errors: true
   register: slave_status
   when : mysql_replication_role == "slave"

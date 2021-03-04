@@ -1,0 +1,104 @@
+pipeline {
+    agent any
+    environment {
+        LIB_DIR="/opt/build/platform/lib"
+        HARBOR_PREFIX="harbor.zhkj.com/jtb"
+        COMM_DIR="/data/jtb/infra/git"
+    }
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+        // buildDiscarder(logRotator(numToKeepStr: '5'))
+    }
+    stages {
+        stage('代码获取'){
+            steps{
+                git branch: '${tag}', credentialsId: 'a6548da5-8510-4629-9a07-aafc309d1b86', url: 'http://git.zanclick.cn/jtb/jtb-whyg/jt-platform-whyg.git'
+            }
+        }
+        stage('检测发布服务名称'){
+            steps{
+                sh  '''
+                if [[ ${SVC_NAME} = None ]];then
+                    echo ${SVC_NAME}
+                    err "[ERROR] 必须通过Jt-platform-whyg代码质量分析项目来触发构建发布此项目"  
+                fi'''
+            }
+        }
+        stage('是否编译core包)') {
+            steps {
+                println "${IF_RUN}"
+            }
+        }
+        stage('基础依赖服务打包'){
+            steps{
+                script {
+                    if ( params.IF_RUN == 'yes' ) {
+                        println "[INFO]开始编译jt-commons和jt-platform-core项目..."
+                        dir("${COMM_DIR}/jt-commons"){
+                            sh '''git pull http://git.zanclick.cn/jtb/jtb-core/jt-commons.git
+                            mvn clean &&  mvn install   -Dmaven.test.skip=true'''
+                            println "[INFO]jt-commons编译完成...,准备编译jt-platform-core项目"
+                        }    
+                        dir("${COMM_DIR}/jt-platform-core"){
+                            sh '''git pull http://git.zanclick.cn/jtb/jtb-core/jt-platform-core.git
+                            git checkout 1.1.x && mvn clean && mvn install'''
+                            println "[INFO]jt-platform-core编译完成"
+                        }
+                    } else {
+                        println "[WARN]跳过编译jt-commons和jt-platform-core项目..."
+                    }
+                }
+            }
+        }
+        stage('发布服务打包'){
+            steps{
+                sh  '''
+                cd ${WORKSPACE}/platform-${SVC_NAME}
+                mvn clean && mvn install
+                VERSION=$(grep "<version>" pom.xml |sed -n 2p |awk -F '[<>]' '{print $3}')
+                cp ./target/${SVC_NAME}-${VERSION}.jar   ${LIB_DIR}'''
+            }
+        }
+        stage('构建推送镜像'){
+            steps{
+                sh '''
+                PORT=$(grep ${SVC_NAME} /data/jtb/infra/jenkins/platform_port.log|awk '{print $NF}')
+                cd platform-${SVC_NAME}
+                VERSION=$(grep version pom.xml |awk -F '[<>]' 'NR==2{print $3}') 
+                cd ${LIB_DIR}
+                ../bin/whyg_build_docker_image.sh  ${SVC_NAME} ${VERSION}  ${PORT}
+                docker tag  jt-platform-${SVC_NAME}:${VERSION}     ${HARBOR_PREFIX}/jt-platform-${SVC_NAME}:${VERSION}
+                docker push  ${HARBOR_PREFIX}/jt-platform-${SVC_NAME}:${VERSION}'''
+            }
+        }
+        stage('清除镜像'){
+            steps{
+                sh '''
+                cd platform-${SVC_NAME}
+                VERSION=$(grep version pom.xml |awk -F '[<>]' 'NR==2{print $3}')
+                echo "begin delete ${SVC_NAME}-${VERSION}.jar"
+                docker rmi jt-platform-${SVC_NAME}:${VERSION}
+                docker rmi ${HARBOR_PREFIX}/jt-platform-${SVC_NAME}:${VERSION}'''
+            }
+        }
+        stage('发布服务'){
+            steps{
+                sh '''
+                cd platform-${SVC_NAME}
+                version=$(grep version pom.xml |awk -F '[<>]' 'NR==2{print $3}')
+                current_version=$(grep -w image  /opt/build/platform/conf/jt-platform-${SVC_NAME}.yml |awk -F: \'{print $NF}\')
+                cd ${LIB_DIR}
+                if [ $version = ${current_version} ];then
+                    echo "equal.."
+                    /opt/kube/bin/kubectl delete -f ../conf/jt-platform-${SVC_NAME}.yml
+                    /opt/kube/bin/kubectl apply -f ../conf/jt-platform-${SVC_NAME}.yml --record
+                else    
+                    echo "not equal.."
+                    sed -i "s;${current_version};${version};"    /opt/build/platform/conf/jt-platform-${SVC_NAME}.yml  && \\
+                    /opt/kube/bin/kubectl apply -f  ../conf/jt-platform-${SVC_NAME}.yml --record
+                fi'''
+            }
+        }
+    }
+}

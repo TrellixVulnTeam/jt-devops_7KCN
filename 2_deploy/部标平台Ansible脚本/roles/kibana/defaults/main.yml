@@ -1,11 +1,12 @@
-kibana_file_path: "/root"
 kibana_install_path: "/data/jtb/infra"
+soft_path: "/data/soft"
 
 kibana_version: "6.7.0"
 kibana_port: "5601"
+server_host: "0.0.0.0"
 
-kibana_path: "{{ kibana_file_path }}/kibana-{{ kibana_version }}-x86_64.rpm"
+kibana_file: "{{ soft_path }}/kibana-{{ kibana_version }}-x86_64.rpm"
 kibana_config_path: "/etc/kibana/kibana.yml"
 
-kibana_ip: "{{ ansible_eth0['ipv4']['address'] }}"
-es_hosts: '["http://{{ ip1:9200 }}"]'
+es_host: ""
+es_port: "9200"

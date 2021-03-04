@@ -1,10 +1,19 @@
-- name: "安装kibana"
-  shell: "rpm -ivh {{ kibana_path }}"
+- name: 检测安装包是否存在
+  stat: path={{ kibana_file }}
+  register: kibana_package
+
+- name: 下载安装包
+  get_url: url=https://repo.huaweicloud.com/kibana/{{ kibana_version }}/kibana-{{ kibana_version }}-x86_64.rpm  dest={{ soft_path }}/kibana-{{ kibana_version }}-x86_64.rpm
+  when: not kibana_package.stat.exists
+
+- name: 安装kibana
+  shell: "cd {{ soft_path }} && rpm -ivh {{ kibana_file }}"
   ignore_errors: true
+  when: "groups['kube-master'] | length < 2 and inventory_hostname == groups['kube-master'][0]"
 
 - name: "部署配置文件"
   template:
-    src: kibana.yml
+    src: kibana.yml.j2
     dest: "{{ kibana_config_path }}"
 
 - name: "启动kibana"

@@ -1,17 +1,19 @@
 fastdfs_version: 5.11
 fastdfs_module_version: "1.20"
-fastdfs_lib_version: 1.0.39
-nginx_version: 1.14.2
+fastdfs_lib_version: "1.0.39"
+nginx_version: "1.14.2"
 
 fastdfs_file_path: "fastdfs-{{ fastdfs_version }}.tar.gz"
 fastdfs_module_path: "fastdfs-nginx-module-{{ fastdfs_module_version }}.tar.gz"
 fastdfs_lib_path: "libfastcommon-{{ fastdfs_lib_version }}.tar.gz"
 nginx_file_path: "nginx-{{ nginx_version }}.tar.gz"
+soft_path: "/data/soft"
 
 common_path: "/data/jtb/infra"
 fastdfs_install_path: "/data/jtb/infra/fastdfs"
 nginx_install_path: "/data/jtb/infra/nginx"
-fastdfs_ip: "{{ ansible_eth0['ipv4']['address'] }}"
+#fastdfs_ip: "{{ ansible_eth0['ipv4']['address'] }}"
+fastdfs_ip: "{{ groups['slave'][0] }}"
 fastdfs_port: 9001
 
 tracker_port: 22122
@@ -21,4 +23,10 @@ storage_path: "{{ fastdfs_install_path }}/storage"
 config_path: "/etc/fdfs"
 
 local_storage_port: 9002
-local_storage_path: /data/resource
+local_storage_path: "/data/resource"
+
+storage_connection: 1024
+tracker_connection: 512
+log_level: debug
+
+

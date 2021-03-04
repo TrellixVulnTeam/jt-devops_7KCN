@@ -1,0 +1,14 @@
+[Unit]
+Description=rinetd
+After=network.target
+ 
+[Service]
+Type=forking
+PIDFile=/var/run/rinetd.pid
+KillMode=process
+ExecStart=/usr/bin/rinetd -c /etc/rinetd.conf
+ExecReload=/bin/kill -HUP $MAINPID
+PrivateTmp=true
+ 
+[Install]
+WantedBy=multi-user.target

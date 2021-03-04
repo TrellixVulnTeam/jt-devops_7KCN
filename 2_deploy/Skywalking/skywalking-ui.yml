@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skywalking-ui
+  labels:
+    app: skywalking-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skywalking-ui
+  template:
+    metadata:
+      labels:
+        app: skywalking-ui
+    spec:
+      nodeName: 10.111.30.8
+      containers:
+      - name: skywalking-ui
+        image: harbor.zhkj.com/jtb/skywalking-ui:6.1.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: httpport
+        resources:
+          requests:
+            memory: 1Gi
+          limits:
+            memory: 2Gi
+        env:
+        - name: SW_OAP_ADDRESS
+          value: 10.111.30.8:32100
+      hostAliases:
+        - ip: "10.111.30.8"
+          hostnames:
+            - "skywalking-oap-server"
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: skywalking-ui
+  labels:
+    service: skywalking-ui
+spec:
+  ports:
+  - port: 8080
+    name: httpport
+    targetPort: 8080
+    nodePort: 30009
+  type: NodePort
+  selector:
+    app: skywalking-ui

@@ -1,0 +1,89 @@
+- name: 创建mysql组
+  group: name=mysql state=present 
+
+- name: 创建mysql用户
+  user: name=mysql group=mysql shell=/sbin/nologin
+
+- name: 创建mysql安装相关目录
+  file: path={{ item }} state=directory 
+  with_items:
+    - "{{ mysql_install_path }}"
+    - "{{ mysql_soft_path }}"
+
+- name: 创建慢sql日志目录
+  file: path={{ mysql_slow_log }} state=directory owner=mysql group=mysql
+
+- name: 检查MySQL安装包是否存在
+  stat: path={{ mysql_file }}
+  register: exists_status
+  
+- name: 分发安装包
+  copy: src={{ mysql_file }} dest=/root/
+  when: not exists_status.stat.exists
+
+- name: 解压MySQL安装包
+  unarchive: src={{ mysql_file }} dest={{ mysql_soft_path }}
+
+- name: 安装MySQL基础依赖包
+  yum: 
+    name:
+      - autoconf
+      - MySQL-python
+    state: present
+
+- name: 卸载mariadb相关依赖包
+  yum: name=mariadb-1:5.5.64-1.el7.x86_64 state=absent
+  ignore_errors: true
+
+- name: 获取mysql状态/是否安装成功
+  stat: path={{ mysql_sock }}
+  register: mysql_run_result
+
+- name: 安装MySQL
+  shell: "cd {{ mysql_soft_path }} && yum -y localinstall MySQL-*"
+  when: not mysql_run_result.stat.exists
+  tags: install_mysql
+
+- name: 拷贝配置文件
+  template: src=my-init.cnf dest=/etc/my.cnf  backup=yes
+  when: not mysql_run_result.stat.exists
+  tags: install_mysql
+
+- name: 安装数据库
+  shell: "/usr/bin/mysql_install_db --defaults-file=/etc/my.cnf \
+         --user=mysql --group=mysql \
+         --datadir={{ mysql_path }}"
+  when: not mysql_run_result.stat.exists
+  tags: install_mysql
+
+- name: 启动数据库
+  service: name=mysql state=started
+  tags: install_mysql
+  ignore_errors: true
+
+- name: 检查数据库运行状态
+  shell: "/etc/init.d/mysql status|grep running"
+  register: mysql_status
+  
+- name: 删除默认数据
+  file: path=/var/lib/mysql state=absent
+  when: mysql_status.rc == 0 
+   
+- name: 创建目录
+  file: path=/var/lib/mysql state=directory mode=0755 owner=mysql  group=mysql
+
+- name: 添加mysql.sock软连接
+  file:
+    src: "{{ mysql_path }}/mysql.sock"
+    dest: "/var/lib/mysql/mysql.sock"
+    state: "link"
+
+#- name: 修改mysql参数
+#  template: src=my.cnf dest=/etc/my.cnf  backup=yes
+#
+#- name: 重启mysql
+#  service: name=mysql state=restarted
+
+- name: 设置密码
+  shell: "mysqladmin -uroot password {{ mysql_pass }}"
+  ignore_errors: true

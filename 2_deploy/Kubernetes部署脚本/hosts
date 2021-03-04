@@ -1,24 +1,30 @@
 # 'etcd' cluster should have odd member(s) (1,3,5,...)
 # variable 'NODE_NAME' is the distinct name of a member in 'etcd' cluster
 [etcd]
-192.168.1.50 NODE_NAME=etcd1
-192.168.1.51 NODE_NAME=etcd2
-192.168.1.52 NODE_NAME=etcd3
+192.168.0.3 NODE_NAME=etcd1
+192.168.0.4 NODE_NAME=etcd2
+192.168.0.5 NODE_NAME=etcd3
 
 # master node(s)
 [kube-master]
-192.168.1.50
-#192.168.1.2
+192.168.0.2
 
 # work node(s)
 [kube-node]
-192.168.1.51
-192.168.1.52
+192.168.0.3
+192.168.0.4
+192.168.0.5
+192.168.0.6
+
+[master]
+192.168.0.5
+[slave]
+192.168.0.6
 
 # [optional] harbor server, a private docker registry
 # 'NEW_INSTALL': 'yes' to install a harbor server; 'no' to integrate with existed one
 [harbor]
-#192.168.1.8 HARBOR_DOMAIN="harbor.yourdomain.com" NEW_INSTALL=no
+192.168.0.3 HARBOR_DOMAIN="harbor.zhkj.com" NEW_INSTALL=yes
 
 # [optional] loadbalance for accessing k8s from outside
 [ex-lb]
@@ -41,7 +47,7 @@ SERVICE_CIDR="10.68.0.0/16"
 CLUSTER_CIDR="172.20.0.0/16"
 
 # NodePort Range
-NODE_PORT_RANGE="30000-50000"
+NODE_PORT_RANGE="9000-60010"
 
 # Cluster DNS Domain
 CLUSTER_DNS_DOMAIN="cluster.local."
@@ -55,3 +61,8 @@ ca_dir="/etc/kubernetes/ssl"
 
 # Deploy Directory (kubeasz workspace)
 base_dir="/etc/ansible"
+
+
+
+#ip2=192.168.0.5
+#ip3=192.168.0.6

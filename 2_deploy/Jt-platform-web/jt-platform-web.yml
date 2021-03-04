@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jt-platform-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jt-platform-web
+  template:
+    metadata:
+      labels:
+        app: jt-platform-web
+    spec:
+      nodeName: 192.168.2.4
+      containers:
+      - name: jt-platform-web
+        image: harbor.zhkj.com/jtb/jt-platform-web:1.14.2
+        ports:
+        - name: web
+          containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /index.html
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /index.html
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+        volumeMounts:
+        - name: web
+          mountPath: /index
+        - name: conf
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+      volumes:
+        - name: web
+          hostPath:
+            path: /usr/local/web    
+            type: Directory
+        - name: conf
+          configMap:
+            name: nginx-conf
+      imagePullSecrets:
+        - name: harbor.jtb 
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jt-platform-web
+  labels:
+    name: jt-platform-web
+spec:
+  type: NodePort      
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    nodePort: 8081
+  selector:
+    app: jt-platform-web

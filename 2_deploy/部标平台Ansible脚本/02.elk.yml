@@ -1,11 +1,14 @@
 - hosts:
-    - kube-master
-    - kube-node
+   - es-nodes
   roles: 
-    - elasticsearch
-    - logstash
+    - { role: elasticsearch, es_node_name: "es_node1", when: "inventory_hostname in groups['es-nodes'][0]" }
+    - { role: elasticsearch, es_node_name: "es_node2", when: "inventory_hostname in groups['es-nodes'][1]" }
+    - { role: elasticsearch, es_node_name: "es_node3", when: "inventory_hostname in groups['es-nodes'][2]" }
+    - { role: logstash,  when: "inventory_hostname in groups['es-nodes'][0]" }
+    - { role: logstash,  when: "inventory_hostname in groups['es-nodes'][1]" }
+    - { role: logstash,  when: "inventory_hostname in groups['es-nodes'][2]" }
 
 - hosts:
-    - kube-master
+    - localhost
   roles:
-    - kibana
+    - { role: kibana, es_host: "{{ groups['es-nodes'][0] }}", when: "inventory_hostname in groups['kube-master'][0]" }

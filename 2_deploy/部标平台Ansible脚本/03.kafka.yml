@@ -1,0 +1,9 @@
+- hosts:
+   - kafka-nodes
+  roles:
+   - { role: zookeeper, myid: 1, when: "inventory_hostname in groups['kafka-nodes'][0]" }
+   - { role: zookeeper, myid: 2, when: "inventory_hostname in groups['kafka-nodes'][1]" }
+   - { role: zookeeper, myid: 3, when: "inventory_hostname in groups['kafka-nodes'][2]" }
+   - { role: kafka, id: 1, when: "inventory_hostname in groups['kafka-nodes'][0]" }
+   - { role: kafka, id: 2, when: "inventory_hostname in groups['kafka-nodes'][1]" }
+   - { role: kafka, id: 3, when: "inventory_hostname in groups['kafka-nodes'][2]" }

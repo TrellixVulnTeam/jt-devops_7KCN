@@ -11,4 +11,4 @@ zabbix_log: /data/jtb/logs/zabbix/zabbix_server.log
 zabbix_pid: /data/jtb/infra/zabbix/zabbix_server.pid
 agent_pid: /data/jtb/infra/zabbix/zabbix_agentd.pid
 agent_log: /data/jtb/logs/zabbix/zabbix_agentd.log
-server_ip: "{{ ip1 }}"
+server_ip: ""

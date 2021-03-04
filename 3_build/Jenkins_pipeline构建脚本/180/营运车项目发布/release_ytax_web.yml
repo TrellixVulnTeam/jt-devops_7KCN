@@ -1,0 +1,54 @@
+---
+
+- hosts: yyc
+  remote_user: root
+  gather_facts: no
+  vars:
+    - Destination_dir: "/data/jtb/infra/git/jt-platform-web/src/plugins"
+    - DST: "/data/jtb/infra/git/jt-platform-web"
+    - CONF: "{{ Destination_dir }}/mHttp.js"
+  tasks:
+    - block:
+      - name: get new code
+        shell: "git reset --hard HEAD  \
+             && git checkout master \
+             && git reset --hard HEAD  \
+             && git pull"
+        args:
+          chdir: "{{ DST }}"
+
+      - name: replace configuration serverUrl
+        lineinfile:
+          path: "{{ CONF }}"
+          regexp: '^(export const )(\$serverUrl = ).*'
+          line: 'export const $serverUrl = "http://{{ groups["yyc"][0] }}:8812"'
+
+      - name: replace configuration uploadUrl
+        lineinfile:
+          path: "{{ CONF }}"
+          regexp: '^(export const )(\$uploadUrl = ).*'
+          line: 'export const $uploadUrl = "http://{{ groups["yyc"][0] }}:8812"'
+
+      - name: replace configuration apiServerUrl
+        lineinfile:
+          path: "{{ CONF }}"
+          regexp: '^(export const )(\$apiServerUrl = ).*'
+          line: 'export const $apiServerUrl = "http://{{ groups["yyc"][0] }}:8814"'
+
+      - name: replace configuration socketioUrl
+        lineinfile:
+          path: "{{ CONF }}"
+          regexp: '^(export const )(\$socketioUrl = ).*'
+          line: 'export const $socketioUrl = "ws://{{ groups["yyc"][0] }}:7002/socketio"'
+
+      - name: replace configuration hostUrl
+        lineinfile:
+          path: "{{ CONF }}"
+          regexp: '^(export const )(\$hostUrl = ).*'
+          line: 'export const $hostUrl = "ws://{{ groups["yyc"][0] }}:60002"'
+ 
+      - name: copy dist
+        copy: "src={{ DST }}/dist dest={{ DST }}/web"
+
+      - name: 
+      connection: local

@@ -1,0 +1,19 @@
+- name: 获取mysql主机的网段
+  shell: echo {{ inventory_hostname }} |  awk -F. '{print $1"."$2"."$3".%"}'
+  register: subnet_ip
+
+- name: 网段赋值
+  set_fact: SUBNET_IP={{ subnet_ip.stdout }}
+
+- name: 添加root用户登录权限
+  shell: mysql -uroot -p{{ mysql_pass }} -e "grant all on *.* to root@'{{ SUBNET_IP }}' identified by '{{ mysql_pass }}'"
+
+- name: 放开应用root用户权限
+  shell: mysql -uroot -p{{ mysql_pass }} -e "grant all on *.* to root@'{{ pod_subnet }}' identified by '{{ mysql_pass }}'"
+
+- name: 添加只读用户devops
+  shell: mysql -uroot -p{{ mysql_pass }} -e "grant select on *.* to devops@'{{ SUBNET_IP }}' identified by '{{ mysql_pass }}'"
+
+- name: 添加主从同步用户
+  shell: mysql -uroot -p{{ mysql_pass }} -e "grant REPLICATION SLAVE on *.* to {{ mysql_replication_user }}@'{{ SUBNET_IP }}' identified by '{{ mysql_replication_password }}'"
+  when: inventory_hostname in groups['master']  and  add_repluser == "yes"

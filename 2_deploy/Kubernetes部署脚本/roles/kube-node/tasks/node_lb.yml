@@ -4,9 +4,9 @@
   when: "inventory_hostname in groups['ex-lb']"
   tags: restart_lb
 
-#- name: 安装 haproxy
-#  package: name=haproxy state=present
-#  when: 'INSTALL_SOURCE != "offline"'
+- name: 安装 haproxy
+  package: name=haproxy state=present
+  when: 'INSTALL_SOURCE != "offline"'
 
 # 离线安装 haproxy
 - import_tasks: offline.yml
@@ -15,14 +15,11 @@
 - name: 创建haproxy配置目录
   file: name=/etc/haproxy state=directory
 
-#- name: 修改centos的haproxy.service
-#  template: src=haproxy.service.j2 dest=/usr/lib/systemd/system/haproxy.service
-#  when: 'ansible_distribution in ["CentOS","RedHat","Amazon"]' 
-#  tags: restart_lb
-- name: 安装haproxy服务
-  yum: name=haproxy state=present
-  ignore_errors: true
-  when 'INSTALL_SOURCE == "online"'
+- name: 修改centos的haproxy.service
+  template: src=haproxy.service.j2 dest=/usr/lib/systemd/system/haproxy.service
+  when: 'ansible_distribution in ["CentOS","RedHat","Amazon"]' 
+  tags: restart_lb
+
 
 - name: 配置 haproxy
   template: src=haproxy.cfg.j2 dest=/etc/haproxy/haproxy.cfg
@@ -51,21 +48,13 @@
 - block:
   - name: 替换 kubeconfig 的 apiserver 地址
     lineinfile:
-      dest: /root/.kube/config
+      dest: "{{ item }}"
       regexp: "^    server"
       line: "    server: {{ KUBE_APISERVER }}"
-  
-  - name: 替换 kubelet.kubeconfig 的 apiserver 地址
-    lineinfile:
-      dest: /etc/kubernetes/kubelet.kubeconfig
-      regexp: "^    server"
-      line: "    server: {{ KUBE_APISERVER }}"
-  
-  - name: 替换 kube-proxy.kubeconfig 的 apiserver 地址
-    lineinfile:
-      dest: /etc/kubernetes/kube-proxy.kubeconfig
-      regexp: "^    server"
-      line: "    server: {{ KUBE_APISERVER }}"
+    with_items:
+    - "/root/.kube/config"
+    - "/etc/kubernetes/kubelet.kubeconfig"
+    - "/etc/kubernetes/kube-proxy.kubeconfig"
 
   - name: restart kube-node service
     service: name={{ item }} state=restarted

@@ -1,7 +1,7 @@
-common_path: "/data/jtb/infra/"
+install_path: "/data/jtb/infra"
+soft_path: "/data/soft"
 redis_version: "5.0.5"
 redis_file: "redis-{{ redis_version }}.tar.gz"
-redis_path: "{{ common_path }}/redis-{{ redis_version }}"
+redis_path: "{{ install_path }}/redis-{{ redis_version }}"
 redis_file_url: "http://download.redis.io/releases/redis-{{ redis_version }}.tar.gz"
 redis_pass: ""
-

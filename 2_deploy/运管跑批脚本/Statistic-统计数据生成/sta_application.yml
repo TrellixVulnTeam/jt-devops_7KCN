@@ -1,0 +1,119 @@
+server:
+  port: 21009
+spring:
+  application:
+    name: gateway-calc-statistics
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    url: jdbc:mysql://10.111.30.9:3306/car_mp?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true
+    username: root
+    password: TZTUb75yH3
+    driver-class-name: com.mysql.jdbc.Driver
+    druid:
+      initial-size: 1
+      min-idle: 5
+      max-wait: 10000
+      pool-prepared-statements: false
+      validation-query: SELECT 'x'
+      test-on-borrow: false
+      test-on-return: false
+      test-while-idle: true
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 30000
+      max-pool-prepared-statement-per-connection-size: 20
+      max-active: 20
+      max-idle: 20
+  cloud:
+    stream:
+      bindings:
+        tripDetailConsumer:
+          destination: TripDetail
+          content-type: application/json;charset=UTF-8
+          binder: kafka
+          group: testPlatform_statistics
+          consumer:
+            headerMode: raw
+      binders:
+        kafka:
+          type: kafka
+          environment:
+            spring:
+              cloud:
+                stream:
+                  kafka:
+                    binder:
+                      brokers: 10.111.30.8:9092,10.111.30.9:9092,10.111.30.4:9092
+                      zkNodes: 10.111.30.8:2181,10.111.30.9:2181,10.111.30.4:2181
+
+kafka:
+  default-binder:
+    broker-list: 10.111.30.8:9092,10.111.30.9:9092,10.111.30.4:9092
+    group: default
+    
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://10.111.30.8:30002/eureka/
+  instance:
+    instance-id: ${eureka-instance-id}
+    prefer-ip-address: true
+
+
+redis:
+  host: 10.111.30.4
+  port: 6379
+  reids-maxIdle: 50
+  redis-maxActive: 1000
+  redis-maxWait: 5000
+  testOnBorrow: true
+  pass: MyCj@tNsldjCfU
+
+
+management:
+  endpoint:
+    health:
+      show-details: "ALWAYS"
+  endpoints:
+    web:
+      exposure:
+        #公开所有端点
+        include: "*"
+
+mybatis-plus:
+  mapper-locations: classpath*:/com/**/mapper/*Mapper.xml
+  # 热加载mapper文件
+  refresh: true
+  type-aliases-package: com.zhkj.jtb.gateway.calc.statistics.inter.mapper
+
+jtb:
+  minSpeed: 0
+  model: 60
+  endTime: "2020-07-31 00:00:00"
+  push:
+    url: 10.111.30.8:30010
+  ep809:
+    url: 10.111.30.8:30012
+  infra:
+    url: 10.111.30.8:30011
+  executor:
+    jtb-task-executor:
+      corePoolSize: 100
+      maxPoolSize: 200
+      queueCapacity: 10000
+      keepAliveSeconds: 300
+    executors:
+      trip:
+        corePoolSize: 100
+        maxPoolSize: 100
+        queueCapacity: 100000
+        keepAliveSeconds: 30
+      positioned:
+        corePoolSize: 100
+        maxPoolSize: 100
+        queueCapacity: 1000
+        keepAliveSeconds: 30
+  swagger:
+    enabled: true
+    base-package: com.zhkj.jtb.gateway.calc.statistics
+    api-info:
+      title: 数据汇总分析统计

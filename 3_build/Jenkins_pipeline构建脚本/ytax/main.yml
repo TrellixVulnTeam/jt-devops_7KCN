@@ -1,0 +1,11 @@
+---
+#wushaoyu
+
+- import_playbook: release_ytax_platform.yml
+  when: option == "platform"
+
+- import_playbook: release_ytax_gateway.yml
+  when: option == "gateway"
+
+- import_playbook: release_ytax_ytsf.yml
+  when: option == "ytsf"

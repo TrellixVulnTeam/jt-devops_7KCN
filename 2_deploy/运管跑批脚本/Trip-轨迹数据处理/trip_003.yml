@@ -1,0 +1,68 @@
+- hosts: 10.111.30.3
+  remote_user: root
+  gather_facts: no
+  vars:
+    dir: /data/jtb/test
+    jar: "gateway-calc-trip-1.1.0.BUILD-SNAPSHOT.jar"
+    sh: "trip_run.sh"
+    num_list: "[1,2,3,4,5,6,7]"
+  tasks:
+    - name: "mkdir some dir"
+      file: "path={{ dir }}  state=directory mode=0755 recurse=yes"
+    
+    - name: "mkdir other dir"
+      file: "path={{ dir }}/trip{{ item }} state=directory mode=0755"
+      with_items: "{{ num_list }}"
+    
+    - name: "copy and modify name jar"
+      copy: "src=/root/{{ jar }}  dest={{ dir }}/trip{{ item }}/gateway-calc-trip-1.1.0.BUILD-SNAPSHOT-{{ item }}.jar"
+      with_items: "{{ num_list }}"
+      tags: copy_jar
+
+    - name: "copy run.sh"
+      copy: "src=/root/{{ sh }}  dest={{ dir }}/trip{{ item }}/run.sh mode=0755"
+      with_items: "{{ num_list }}"
+
+    - name: "copy yml"
+      copy: "src=/root/trip_application.yml  dest={{ dir }}/trip{{ item }}/application.yml"
+      with_items: "{{ num_list }}"
+
+    - name: "replace some port"
+      replace:
+        path: "{{ dir }}/trip{{ item }}/application.yml"
+        regexp: '21002'
+        replace: '220{{ item }}'
+      with_items: "{{ num_list }}" 
+
+    - name: "replace some number"
+      lineinfile:
+        path: "{{ dir }}/trip{{ item }}/run.sh"
+        regexp: 'number='
+        line: 'number={{ item }}'
+      with_items: "{{ num_list }}" 
+
+    - name: "replace group"
+      replace: 
+        path: "{{ dir }}/trip{{ item }}/application.yml"
+        regexp: 'Loc'
+        replace: 'loc{{ item }}'
+      with_items: "{{ num_list }}"
+    
+    - name: "replace group"
+      replace: 
+        path: "{{ dir }}/trip{{ item }}/application.yml"
+        regexp: 'Gateway-calc-trip'
+        replace: 'gateway-calc-trip{{ item }}'
+      with_items: "{{ num_list }}"
+
+    - name: "replace group"
+      replace: 
+        path: "{{ dir }}/trip{{ item }}/application.yml"
+        regexp: 'TRIPDetail'
+        replace: 'tripDetail{{ item }}'
+      with_items: "{{ num_list }}"
+
+    - name: "start run.sh"
+      shell: "cd {{ dir }}/trip{{ item }} && sh run.sh"
+      with_items: "{{ num_list }}"
+      tags: start_run

@@ -1,0 +1,7 @@
+- import_playbook: trip_003.yml
+- import_playbook: trip_004.yml
+#- import_playbook: trip_005.yml
+#- import_playbook: trip_006.yml
+#- import_playbook: trip_007.yml
+- import_playbook: trip_008.yml
+- import_playbook: trip_009.yml

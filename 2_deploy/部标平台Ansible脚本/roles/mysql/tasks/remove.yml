@@ -1,0 +1,5 @@
+- name: 停止mysql数据库
+  service: name=mysql state=stopped
+
+- name: 清楚安装目录
+  file: path={{ mysql_path }} state=absent

@@ -1,10 +1,11 @@
-es_file_path: "/root"
+soft_path: "/data/soft"
 es_install_path: "/data/jtb/infra"
 es_config_path: "/etc/elasticsearch/elasticsearch.yml"
+es_log_path: "/data/jtb/logs/es"
 
 es_version: "6.7.0"
 
-es_file: "{{ es_file_path }}/elasticsearch-{{ es_version }}.rpm"
+es_file: "{{ soft_path }}/elasticsearch-{{ es_version }}.rpm"
 
 es_user: elasticsearch
 es_group: elasticsearch
@@ -17,5 +18,8 @@ es_data_dir: "{{ es_home_dir }}/data"
 es_log_dir:  "{{ es_home_dir }}/log"
 
 es_cluster_name: "my-application"
-es_node_name: "{{ ansible_fqdn }}"
-es_unicast_hosts: ["{{ ip1 }}:{{ es_http_port }}","{{ ip2 }}:{{ es_http_port }}","{{ ip3 }}:{{ es_http_port }}"]
+es_node_name: ""
+es_node1: "{{ groups['es-nodes'][0] }}"
+es_node2: "{{ groups['es-nodes'][1] }}"
+es_node3: "{{ groups['es-nodes'][2] }}"
+es_unicast_hosts: "[ '{{ es_node1 }}', '{{ es_node2 }}', '{{ es_node3 }}' ]"

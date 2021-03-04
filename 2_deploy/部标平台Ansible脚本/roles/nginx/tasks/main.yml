@@ -1,23 +1,19 @@
 - name: "创建用户组"
-  group:
-    name: "{{ nginx_group }}"
-    state: present
+  group: name=nginx state=present
 
 - name: "创建用户"
-  user:
-    name: "{{ nginx_user }}"
-    group: "{{ nginx_group }}"
+  user: name=nginx group=nginx shell=/sbin/nologin
     
 - name: "解压Nginx安装包"
   unarchive:
-    src: "{{ nginx_file_path }}/nginx-{{ nginx_version }}.tar.gz"
-    dest: /root
-    creates: "/root/nginx-{{ nginx_version }}"
+    src: "{{ nginx_soft_path }}/nginx-{{ nginx_version }}.tar.gz"
+    dest: "{{ nginx_soft_path }}"
+    creates: "{{ nginx_soft_path }}/nginx-{{ nginx_version }}"
   
 - name: "安装依赖包"
   yum:
     name: "{{ item }}"
-    state: installed
+    state: present
   with_items:
     - gcc
     - zlib-devel
@@ -26,33 +22,33 @@
     - openssl
   
 - name: 检测nginx是否已经存在
-  stat: path=/sbin/nginx
+  stat: path={{ nginx_install_path }}/sbin/nginx
   register: sbin_nginx
   
 - name: "编译安装Nginx"
-  shell: "cd /root/nginx-{{ nginx_version }} && ./configure --prefix={{ ngix_install_path }} \  
-          --user={{ nginx_user }} --group={{ nginx_group }} \
+  shell: "cd {{ nginx_soft_path }}/nginx-{{ nginx_version }} && ./configure --prefix={{ nginx_install_path }} \  
+          --user=nginx --group=nginx \
           --with-stream --with-http_ssl_module --with-http_stub_status_module --with-stream_ssl_module && \
          make && make install"
   tags: make_install_nginx
   when: not sbin_nginx.stat.exists
   
-- name: "拷贝配置文件"
-  copy:
-    src: nginx.conf
-    dest: "{{ ngix_install_path }}/conf/nginx.conf"
-    backup: yes
+#- name: "拷贝配置文件"
+#  template:
+#    src: nginx.conf
+#    dest: "{{ nginx_install_path }}/conf/nginx.conf"
+#    backup: yes
 
 - name: "nginx启动命令软连接"
   file:
-    src: "{{ ngix_install_path }}/sbin/nginx"
+    src: "{{ nginx_install_path }}/sbin/nginx"
     dest: /sbin/nginx
     state: link
   ignore_errors: true
 
 - name: 配置文件添加软连接
-  file: "src={{ ngix_install_path }}/conf/nginx.conf dest=/etc/nginx.conf state=link"
+  file: "src={{ nginx_install_path }}/conf/nginx.conf dest=/etc/nginx.conf state=link"
   
 - name: 启动Nginx
-  shell: "nginx -s reload"
-    
+  shell: "{{ nginx_install_path }}/sbin/nginx"
+  ignore_errors: true

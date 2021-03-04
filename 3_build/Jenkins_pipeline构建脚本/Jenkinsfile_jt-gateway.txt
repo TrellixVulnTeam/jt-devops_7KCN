@@ -41,7 +41,8 @@ pipeline {
                     if ( params.IF_RUN == 'yes' ) {
                         println "[INFO]开始编译jt-gateway项目..."
                         dir("${COMM_DIR}/jt-gateway"){
-                            sh '''git pull http://git.zanclick.cn/jtb/jtb-gateway/jt-gateway.git
+                            sh '''git checkout ${tag} 
+                            git pull
                             mvn clean &&  mvn install'''
                             println "[INFO]jt-gateway编译完成..."
                         }
@@ -96,9 +97,13 @@ pipeline {
                 VERSION=$(grep version pom.xml |awk -F '[<>]' 'NR==2{print $3}')
                 cd ${GATEWAY_LIB}
                 version=$(grep -w image ../conf/${GROUP_NAME}-${SVC_NAME}.yml |awk -F: '{print $NF}')
-                kubectl delete -f  ../conf/${GROUP_NAME}-${SVC_NAME}.yml
-                kubectl apply -f  ../conf/${GROUP_NAME}-${SVC_NAME}.yml --record
-                '''
+                if [ $version = ${VERSION} ];then
+                    /opt/kube/bin/kubectl delete -f  ../conf/${GROUP_NAME}-${SVC_NAME}.yml
+                    /opt/kube/bin/kubectl apply -f  ../conf/${GROUP_NAME}-${SVC_NAME}.yml --record
+                else
+                    sed -i "s;${version};${VERSION};"    /opt/build/gateway/conf/${GROUP_NAME}-${SVC_NAME}.yml  && \
+                    /opt/kube/bin/kubectl apply -f  ../conf/${GROUP_NAME}-${SVC_NAME}.yml  --record
+                fi'''
             }
         }
     }

@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skywalking-oap-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skywalking-oap-server
+  template:
+    metadata:
+      labels:
+        app: skywalking-oap-server
+    spec:
+      nodeName: 10.111.30.8
+      serviceAccountName: skywalking
+      initContainers:
+        - name: sidecar-init
+          image: harbor.zhkj.com/jtb/skywalking-agent-sidecar:6.1.0
+          command: ["cp", "-r", "/data/agent", "/sidecar"]
+          volumeMounts:
+          - name: sidecar
+            mountPath: /sidecar
+      containers:
+        - name: skywalking-oap-server
+          image: harbor.zhkj.com/jtb/skywalking-oap-server:6.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+          - containerPort: 11800
+            name: grpc
+          - containerPort: 12800
+            name: rest
+          resources:
+            requests:
+              memory: 1Gi
+            limits:
+              memory: 2Gi
+          env:
+          - name: JAVA_OPTS
+            value: -Xms256M -Xmx512M
+          - name: SW_L0AD_CONFIG_FILE_FROM_VOLUME
+            value: "true"
+          - name: SKYWALKING_oap_UID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
+          volumeMounts:
+            - name: sidecar
+              mountPath: /sidecar 
+            - name: config
+              mountPath: /skywalking/config
+      imagePullSecrets:
+        - name: harbor.jtb
+      volumes:
+        - name: sidecar
+          hostPath:
+            path: /data/jtb/skywalking
+            type: Directory
+        - name: config
+          configMap:
+            name: oap-config
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: skywalking-oap-server
+spec:
+  type: NodePort
+  ports:
+  - name: grpcporst
+    nodePort: 31800
+    port: 11800
+    protocol: TCP
+    targetPort: 11800
+  - name: restport
+    nodePort: 32100
+    port: 12800
+    protocol: TCP 
+    targetPort: 12800
+  selector:
+    app: skywalking-oap-server

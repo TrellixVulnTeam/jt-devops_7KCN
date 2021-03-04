@@ -38,7 +38,7 @@ pipeline {
                     if ( params.IF_RUN == 'yes' ) {
                         println "[INFO]开始编译jt-gateway项目..."
                         dir("${COMM_DIR}/jt-gateway"){
-                            sh '''git pull http://git.zanclick.cn/jtb/jtb-gateway/jt-gateway.git
+                            sh '''git pull
                             mvn clean &&  mvn install'''
                             println "[INFO]jt-gateway编译完成..."
                         }
@@ -64,7 +64,8 @@ pipeline {
             steps{
                 sh '''
                 VERSION=$(grep version pom.xml |awk -F '[<>]' 'NR==2{print $3}')
-                PORT=$(grep ${SVC_NAME} ${WORKSPACE}/port.txt|awk '{print $NF}')
+                echo "当前路径${WORKSPACE}"
+                PORT=$(grep ${SVC_NAME} /data/jtb/infra/jenkins/platform_port.log|awk '{print $NF}')
                 cd ${GATEWAY_LIB}
                 ../bin/build_and_push_image.sh ${GROUP_NAME}  ${SVC_NAME} $VERSION  $PORT
                 '''
@@ -81,12 +82,16 @@ pipeline {
         stage('发布服务'){
             steps{
                 sh '''
-                VERSION=$(grep version pom.xml |awk -F '[<>]' 'NR==2{print $3}')
+                VERSION=`grep version pom.xml |awk -F '[<>]' 'NR==2{print $3}'`
                 cd ${GATEWAY_LIB}
-                version=$(grep -w image ../conf/${GROUP_NAME}-${SVC_NAME}.yml |awk -F: '{print $NF}')
-                kubectl delete -f  ../conf/${GROUP_NAME}-${SVC_NAME}.yml
-                kubectl apply -f  ../conf/${GROUP_NAME}-${SVC_NAME}.yml
-                '''
+                version=`grep -w image /opt/build/gateway/conf/${GROUP_NAME}-${SVC_NAME}.yml |awk -F: '{print $NF}'`
+                if [ $version = ${VERSION} ];then
+                    /opt/kube/bin/kubectl delete -f  ../conf/${GROUP_NAME}-${SVC_NAME}.yml
+                    /opt/kube/bin/kubectl apply -f  ../conf/${GROUP_NAME}-${SVC_NAME}.yml
+                 else
+                    sed -i "s;${version};${VERSION};" ../conf/${GROUP_NAME}-${SVC_NAME}.yml
+                    /opt/kube/bin/kubectl apply -f  ../conf/${GROUP_NAME}-${SVC_NAME}.yml
+                fi'''
             }
         }
     }

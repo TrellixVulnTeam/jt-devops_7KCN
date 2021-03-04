@@ -81,8 +81,8 @@
   connection: local
   when: not docker_status.stat.exists
 
-- name: docker命令自动补全
-  copy: src={{ bin_dir }}/docker dest=/etc/bash_completion.d/docker mode=0644
+#- name: docker命令自动补全
+#  copy: src={{ bin_dir }}/docker dest=/etc/bash_completion.d/docker mode=0644
 
 - name: docker国内镜像加速
   template: src={{ base_dir }}/roles/docker/templates/daemon.json.j2 dest=/etc/docker/daemon.json

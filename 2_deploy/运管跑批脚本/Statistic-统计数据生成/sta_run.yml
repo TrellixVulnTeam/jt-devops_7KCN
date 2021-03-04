@@ -1,0 +1,7 @@
+#- import_playbook: sta_001.yml
+#- import_playbook: sta_002.yml
+- import_playbook: sta_003.yml
+- import_playbook: sta_004.yml
+- import_playbook: sta_005.yml
+- import_playbook: sta_006.yml
+- import_playbook: sta_007.yml

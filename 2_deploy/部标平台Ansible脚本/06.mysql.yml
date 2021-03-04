@@ -1,0 +1,16 @@
+- hosts:
+    - memsql
+    - master
+    - slave
+  roles:
+    - { role: mysql, mysql_pass: "QLEF@1xMil^zQv" }
+
+- hosts: 
+    - master
+  roles:
+    - { role: mysql_repl, mysql_replication_role: "master", mysql_pass: "QLEF@1xMil^zQv" }
+  
+- hosts:
+    - slave
+  roles:
+    - { role: mysql_repl, mysql_replication_role: "slave", mysql_pass: "QLEF@1xMil^zQv" }

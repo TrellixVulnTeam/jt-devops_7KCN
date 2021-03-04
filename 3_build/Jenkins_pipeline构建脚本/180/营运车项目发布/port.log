@@ -1,0 +1,36 @@
+#platform service port
+provider-terminal       10009
+provider-system         8081
+provider-report         10010
+provider-push           8083
+provider-org            8090
+provider-map            8091
+provider-job            8093
+provider-infrastructure 10001
+endpoint-mobile      11002
+provider-data         12009
+provider-fence          8092
+provider-duty           8094
+provider-ygapi          8099
+gateway-server          8812
+gateway-server-gateway          8813
+provider-report-ytsf    13001
+provider-report-yyc     11005
+provider-estamp-whyg    11003
+provider-dashboard-whyg 11004
+endpoint-809            11001
+gateway-api             8814
+config-server           8001
+boot-admin              8000
+
+#gateway service port
+gateway-calc-alarm       21001
+gateway-calc-trip        21002
+gateway-calc-forward     21003
+gateway-calc-statistics  21009
+
+jt-gateway-808           10005,9998
+jt-gateway-809-down      10011,9994
+jt-gateway-809-up        10010,9995
+jt-gateway-1078          10004,9996,9997,60002
+jt-gateway-annex         10012,9990

@@ -1,0 +1,75 @@
+pipeline {
+    agent any
+    environment {
+        LIB_DIR="/opt/build/platform/lib"
+        HARBOR_PREFIX="harbor.zhkj.com/jtb"
+        COMM_DIR="/data/jtb/infra/git"
+    }
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+        //buildDiscarder(logRotator(numToKeepStr: '5'))
+    }
+    stages {
+        stage('代码获取'){
+            steps{
+                git branch: '${tag}', credentialsId: 'a6548da5-8510-4629-9a07-aafc309d1b86', url: 'http://git.zanclick.cn/jtb/jtb-ytsf/jt-platform-ytsf.git'
+            }
+        }
+        stage('检测发布服务名称'){
+            steps{
+                sh  '''
+                if [[ ${SVC_NAME} = None ]];then
+                    echo ${SVC_NAME}
+                    err "[ERROR] 必须通过Jt-gateway代码质量分析项目来触发构建发布此项目"   
+                fi'''
+            }
+        }
+        stage('发布服务打包'){
+            steps{
+                sh  '''
+                cd platform-${SVC_NAME}
+                mvn clean && mvn install
+                VERSION=$(grep version pom.xml |awk -F '[<>]' 'NR==2{print $3}')
+                cp ./target/${SVC_NAME}-${VERSION}.jar   ${LIB_DIR}'''
+            }
+        }
+        stage('构建推送镜像'){
+            steps{
+                sh '''
+                cd platform-${SVC_NAME}
+                VERSION=$(grep version pom.xml |awk -F '[<>]' 'NR==2{print $3}') 
+                cd ${LIB_DIR}
+                ../bin/build_docker_image.sh  ${SVC_NAME} ${VERSION}  ${PORT}
+                docker tag jt-${SVC_NAME}:${VERSION} ${HARBOR_PREFIX}/jt-platform-${SVC_NAME}:${VERSION}
+                docker push ${HARBOR_PREFIX}/jt-platform-${SVC_NAME}:${VERSION}'''
+            }
+        }
+        stage('清除镜像'){
+            steps{
+                sh '''
+                cd platform-${SVC_NAME}
+                VERSION=$(grep version pom.xml |awk -F '[<>]' 'NR==2{print $3}')
+                echo "begin delete ${SVC_NAME}-${VERSION}.jar"
+                docker rmi jt-${SVC_NAME}:${VERSION}
+                docker rmi ${HARBOR_PREFIX}/jt-platform-${SVC_NAME}:${VERSION}'''
+            }
+        }
+        stage('发布服务'){
+            steps{
+                sh '''
+                cd  ${WORKSPACE}/platform-${SVC_NAME}
+                VERSION=$(grep version pom.xml |awk -F '[<>]' 'NR==2{print $3}')
+                cd ${LIB_DIR}
+                version=$(grep -w image ../conf/jt-platform-${SVC_NAME}.yml |awk -F: '{print $NF}')
+                if [ ${VERSION} = ${version} ];then
+                    /opt/kube/bin/kubectl delete -f    ../conf/jt-platform-${SVC_NAME}.yml
+                    /opt/kube/bin/kubectl apply -f   ../conf/jt-platform-${SVC_NAME}.yml --record
+                else        
+                    sed -i "s;${VERSION};${version};"    ${LIB_DIR}/conf/jt-platform-${SVC_NAME}.yml
+                    /opt/kube/bin/kubectl apply -f   ../conf/jt-platform-${SVC_NAME}.yml --record
+                fi'''
+            }
+        }
+    }
+}

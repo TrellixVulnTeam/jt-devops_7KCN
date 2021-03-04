@@ -7,4 +7,4 @@ zabbix_path: /data/jtb/infra/zabbix
 zabbix_log_path: /data/jtb/logs/zabbix
 agent_pid: /data/jtb/infra/zabbix/zabbix_agentd.pid
 agent_log: /data/jtb/logs/zabbix/zabbix_agentd.log
-server_ip: "{{ ip2 }}"
+server_host: ""

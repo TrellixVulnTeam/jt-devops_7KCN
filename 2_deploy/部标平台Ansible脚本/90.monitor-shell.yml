@@ -1,6 +1,5 @@
 ---
 #批量添加日常监控脚本监控
-#author: wushaoyu
 - hosts: all
   remote_user: root
   vars:
@@ -16,10 +15,9 @@
         state: present
 
     - name: 分发各监控脚本
-      copy: src={{ dir }}/shell/{{ item }}  dest={{ target_dir }}/{{ item }}
+      copy: src={{ dir }}/shell/{{ item }}  dest={{ target_dir }}/{{ item }} mode=0755
       with_items:
         - "check_diskusage.sh"
-        - "clean_es_log.sh"
 
     - name: 时间同步加入计划任务
       cron: "minute=*/30 hour=* day=* month=* weekday=* name='schedule correct time from aliyun' job='ntpdate ntp1.aliyun.com > /dev/null 2>&1'"
@@ -27,8 +25,6 @@
     - name: 监控脚本加入计划任务
       cron: "minute=*/30 hour=* day=* month=* weekday=* name='schedule check disk usage add {{ now_time }}' job='sh {{ target_dir }}/check_diskusage.sh > /dev/null 2>&1'"
 
-    - name: 添加定时清理es log脚本
-      cron："minute=0 hour=3 day=* month=* weekday=0 name='schdule clean es log' job='sh /data/jtb/bin/clean_es_log.sh > /dev/null 2>&1'"
       
 - hosts: kube-master
   remote_user: root
@@ -37,26 +33,27 @@
     log_dir: /data/jtb/logs/check_space
     dir: /data/ansible
     now_time: "{{ ansible_date_time['date'] }}"
-    shell: /data/jtb/bin/check_diskspace_usage.sh
+    es_server: "{{ groups['es-nodes'][0] }}"
+  connetion: local
   tasks:
     - name: 创建日志目录
       file: "path={{ log_dir }} state=directory mode=0755 recurse=yes"
    
     - name: 分发监控脚本
       copy: src={{ dir }}/shell/{{ item }} dest={{ target_dir }}/{{ item }}  mode=0755
-      connect: local
       with_items:
         - "check_diskspace_usage.sh"
         - "check_k8spod_status.sh"
-        - "clean_es_index.sh"
+        - "clean_es_gateway_index.sh"
+        - "clean_es_platform_index.sh"
 
-    - name: 替换节点ip
-      lineinfile: dest={{ shell }} regexp={{ item.name }} line={{ item.host }}
-      connect: local
-      with_items:
-        - {'name':'^IPA','host':'{{ ip1 }}'}
-        - {'name':'^IPB','host':'{{ ip2 }}'}
-        - {'name':'^IPC','host':'{{ ip3 }}'}
+    #- name: 替换节点ip
+    #  lineinfile: dest={{ shell }} regexp={{ item.name }} line={{ item.host }}
+    #  connection: local
+    #  with_items:
+    #    - {'name':'^IPA','host':'{{ ip1 }}'}
+    #    - {'name':'^IPB','host':'{{ ip2 }}'}
+    #    - {'name':'^IPC','host':'{{ ip3 }}'}
      
     - name: kubernetes pod状态监控加入计划任务
       cron: "minute=0 hour=9,12,16,20 day=* month=* weekday=* name='schedule check kubernetes pod status add {{ now_time }}' job='sh {{ target_dir }}/check_k8spod_status.sh > /dev/null 2>&1'"
@@ -64,14 +61,20 @@
     - name: 磁盘空间检查脚本加入计划任务
       cron: "minute=0 hour=9,16,20 day=* month=* weekday=* name='schedule check kubernetes pod status add {{ now_time }}' job='sh {{ target_dir }}/check_diskspace.sh > /dev/null 2>&1'"
 
-    - name: 定期清理es索引加入计划任务
-      cron: "minute=0 hour=3 day=* month=* weekday=* name='schdule clean es index' job='sh {{ target_dir }}/clean_es_index.sh > /dev/null 2>&1'"
+    - name: 定期清理jt-platform索引加入计划任务
+      cron: "minute=0 hour=3 day=* month=* weekday=* name='schdule clean platform index' job='sh {{ target_dir }}/clean_es_platform_index.sh > /dev/null 2>&1'"
+
+    - name: 定期清理jt-gateway索引加入计划任务
+      cron: "minute=0 hour=4 day=* month=* weekday=* name='schdule clean gateway index' job='sh {{ target_dir }}/clean_es_gateway_index.sh > /dev/null 2>&1'"
 
     - name: 替换es脚本中的IP
       lineinfile:
-        path: {{ target_dir }}/clean_es_index.sh
+        path: '{{ target_dir }}/{{ item }}'
         regexp: '^SERVER_PORT'
-        line: 'SERVER_PORT={{ inventory_hostname }}:9200'
+        line: 'SERVER_PORT="{{ es_server }}":9200'
+      with_items:
+        - "clean_es_gateway_index.sh"
+        - "clean_es_platform_index.sh"
           
 - hosts: master
   remote_user: root
@@ -85,4 +88,4 @@
         - "mysql_backup.sh"
 
     - name: 添加mysql定时备份脚本
-      cron: "minute=0 hour=0 day=* month=* weekday=0 name='schedule backup mysql data' job='sh {{ target_dir }}/mysql_bakcup.sh > /dev/null 2>&1'"
+      cron: "minute=0 hour=0 day=* month=* weekday=0 name='schedule backup mysql data' job='sh {{ target_dir }}/mysql_backup.sh > /dev/null 2>&1'"

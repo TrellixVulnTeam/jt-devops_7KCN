@@ -1,0 +1,85 @@
+---
+#wushaoyu
+
+- hosts: ytax
+  remote_user: root
+  gather_facts: no
+  vars:
+    - harbor_prefix: harbor.zhkj.com/jtb
+    - lib_dir: /opt/build/gateway/lib
+    - dst_dir: /opt/build/gateway
+    
+  tasks:
+    - name: 发布网关服务-输出发布的服务名称
+      shell: "echo {{ svc_name }}"
+      register: p
+      tags: output_service
+
+    - debug: msg={{ p.stdout }}
+      tags: output_service
+
+    - name: 拷贝jar包
+      copy: src={{ lib_dir }}/{{ svc_name }}-{{ version }}.jar  dest={{ lib_dir }}/{{ svc_name }}-{{ version }}.jar
+      tags: copy_jar
+  
+    - name: 备份目录是否存在
+      stat: "path=/data/backup/image_bak/{{ now_time }}"
+      register: backup_dir
+      tags: backup_image
+
+    - name: 创建备份目录
+      file: "path=/data/backup/image_bak/{{ now_time }} state=directory"
+      tags: backup_image
+      when: not backup_dir.stat.exists
+
+    - name: 获取运行的镜像版本号
+      shell: "kubectl describe deploy {{ svc_name }}|awk -F: '/Image/{print $NF}'|head -1"
+      register: image_version
+      tags: backup_image, update_service
+
+    - name: 输出获取的版本号
+      debug: var="image_version.stdout"
+      tags: backup_image
+
+    - name: 版本变量赋值
+      set_fact: Version={{ image_version.stdout }}
+      tags: backup_image, update_service
+
+    - name: 拉取生产运行镜像
+      shell: "docker pull {{ harbor_prefix }}/{{ svc_name }}:{{ Version }}"
+      tags: backup_image
+      when: Version == version
+
+    - name: 保存镜像
+      shell: "docker save {{ harbor_prefix }}/{{ svc_name }}:{{ Version }} > {{ svc_name }}_$(date +%Y%m%d_%H%M%S).jar"
+      args:
+        chdir: "/data/backup/image_bak/{{ now_time }}"
+      tags: backup_image
+      when: Version == version
+
+    - name: 构建镜像
+      shell: "cd {{ dst_dir }}/lib && \
+              ../bin/build_and_push_image.sh {{ svc_name }} {{ version }}  {{ port }}"
+      tags: build_push_image 
+  
+    - name: 打标签推送镜像
+      shell: "docker tag  {{ svc_name }}:{{ version }} {{ harbor_prefix }}/{{ svc_name }}:{{ version }} &&  \
+              docker push {{ harbor_prefix }}/{{ svc_name }}:{{ version }}"
+      tags: build_push_image
+
+    - name: 更新单实例服务
+      shell: "kubectl delete -f {{ dst_dir }}/conf/{{ svc_name }}.yml && \
+              kubectl apply  -f {{ dst_dir }}/conf/{{ svc_name }}.yml"
+      when: Version != version
+      tags: update_service
+
+    - name: 更新单实例服务
+      shell: "kubectl apply  -f {{ dst_dir }}/conf/{{ svc_name }}.yml"
+      when: Version == version
+      tags: update_service
+
+    - name: 清除镜像
+      shell: "rm -f {{ lib_dir }}/{{ svc_name }}-{{ version }}.jar && \
+              docker rmi {{ svc_name }}:{{ version }} && \
+              docker rmi {{ harbor_prefix }}/{{ svc_name }}:{{ version }}"
+      tags: delete_image

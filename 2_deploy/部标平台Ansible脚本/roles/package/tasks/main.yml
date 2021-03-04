@@ -1,0 +1,5 @@
+---
+#wushaoyu
+
+- import_tasks: wget_package.yml
+- import_tasks: distribu_package.yml

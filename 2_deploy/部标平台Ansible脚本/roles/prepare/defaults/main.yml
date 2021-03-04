@@ -1,4 +1,7 @@
 LOCAL_PACK_ROOT: /usr/local
-JDK_TAR: /root/jdk-8u201-linux-x64.tar.gz
+soft_path: "/data/soft"
+JDK_TAR: "{{ soft_path }}/jdk-8u201-linux-x64.tar.gz"
 PROFILE: /etc/profile
 DIR: /data/jtb
+#是否需要添加maven环境变量yes/no
+ADD_MVN: no

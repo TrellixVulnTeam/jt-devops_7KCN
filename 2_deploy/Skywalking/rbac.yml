@@ -1,0 +1,31 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: skywalking
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+  
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: skywalking
+  namespace: default
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: default
+  name: skywalking
+subjects:
+- kind: ServiceAccount
+  name: skywalking
+  namespace: default
+roleRef:
+  kind: Role
+  name: skywalking
+  apiGroup: rbac.authorization.k8s.io

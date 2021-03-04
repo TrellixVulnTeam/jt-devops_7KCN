@@ -1,0 +1,83 @@
+#!/bin/sh
+
+lib_dir=/data/jtb/infra/xxl-job/libs
+conf_dir=/data/jtb/infra/xxl-job/confs
+log_dir=/data/jtb/infra/xxl-job/logs
+
+self_name=`basename $0`
+
+line_cmd () {
+    ps -ef|grep xxl-job |grep -v grep |grep -v ${self_name}
+    ret=$?
+}
+
+check_status () {
+    line_cmd
+    if [ $ret -eq 0 ];then
+        echo "Xxl-job is $1"
+    else
+        echo "Xxl-job is $2"
+    fi
+}
+
+status () {
+    check_status "Running..." "Stopped"
+}
+
+
+start () {
+    line_cmd
+    if [ $ret -eq 0 ];then
+        echo "Xxl-job is Running.."
+    else
+       nohup java -jar ${lib_dir}/xxl-job-admin-2.1.2.jar --spring.config.location=${conf_dir}/application.properties 1> ${log_dir}/xxl-job.log 2>&1 &
+       sleep 3
+       check_status "Start Successful..."  "Start Failed..."
+    fi
+}
+
+stop () {
+   line_cmd
+   if [ $ret -eq 0 ];then
+      pid=`ps -ef|grep xxl-job |grep -v grep |grep -v ${self_name}|awk '{print $2}'`
+      kill -15 $pid
+      sleep 8 
+      check_status "Stop Failed..."  "Stop Successful..."
+   else
+      echo "Xxl-job is Stopped..."
+   fi
+}
+
+restart () {
+    stop && \
+    start
+
+}
+usage () {
+    echo -e "You need add one parameter,\033[1;32msuch as [start|stop|status|restart|help]...\033[0m"
+    exit
+
+} 
+
+[[ $# == "0" ]]  && usage
+
+while [[ "${1-}" != "" ]]; do
+   case ${1-} in
+       "start")    shift
+                   start
+                   ;;
+       "stop")     shift
+                   stop
+                   ;;
+       "status")   shift
+                   status
+                   ;;
+       "restart")  shift
+                   restart 
+                   ;;
+       "help")     usage
+                   ;;
+       *)          usage
+   esac
+   #shift
+done

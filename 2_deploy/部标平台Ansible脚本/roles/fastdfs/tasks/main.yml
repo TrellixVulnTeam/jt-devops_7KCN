@@ -7,13 +7,14 @@
     - "{{ fastdfs_install_path }}"
     - "{{ tracker_path }}"
     - "{{ storage_path }}"
+    - "{{ local_storage_path }}"
 
 #- name: 检测安装包是否存在
 #  stat: path={{ fastdfs_file_path }}
 #  register: fastdfs_status
 
 - name: 分发安装包
-  copy: src=/root/{{ item }} dest=/root/{{ item }}
+  copy: src={{ soft_path }}/{{ item }} dest={{ soft_path }}/{{ item }}
   with_items:
     - "{{ fastdfs_file_path }}"
     - "{{ fastdfs_module_path }}"
@@ -24,27 +25,27 @@
 
 - name: 解压fastdfs安装包
   unarchive:
-    src: "/root/{{ fastdfs_file_path }}"
+    src: "{{ soft_path }}/{{ fastdfs_file_path }}"
     dest: "{{ common_path }}"
     creates: "{{ common_path }}/fastdfs-{{ fastdfs_version }}"
 
 - name: 解压fastdfs模块包
   unarchive:
-    src: "/root/{{ fastdfs_module_path }}"
+    src: "{{ soft_path }}/{{ fastdfs_module_path }}"
     dest: "{{ common_path }}"
     creates: "{{ common_path }}/fastdfs-nginx-module-{{ fastdfs_module_version }}"
 
 - name: 解压fastdfs库包
   unarchive:
-    src: "/root/{{ fastdfs_lib_path }}"
+    src: "{{ soft_path }}/{{ fastdfs_lib_path }}"
     dest: "{{ common_path }}"
     creates: "{{ common_path }}/libfastcommon-{{ fastdfs_lib_version }}"
 
 - name: 解压nginx安装包
   unarchive:
-    src: "/root/{{ nginx_file_path }}"
-    dest: "/root/"
-    creates: "/root/nginx-{{ nginx_version }}"
+    src: "{{ soft_path }}/{{ nginx_file_path }}"
+    dest: "{{ common_path }}"
+    creates: "{{ common_path }}/nginx-{{ nginx_version }}"
 
 - name: "安装依赖包"
   yum:
@@ -100,18 +101,12 @@
     src: "mod_fastdfs.conf"
     dest: "{{ config_path }}/mod_fastdfs.conf"
     
-- name: "解压Nginx安装包"
-  unarchive:
-    src: "{{ nginx_file_path }}"
-    dest: /root/
-    creates: /root/nginx-{{ nginx_version }}
-    
 - name: 检查nginx是否编译完成
   stat: path={{ nginx_install_path }}/sbin/nginx
   register: nginx_status
 
 - name: "编译安装Nginx"
-  shell: "cd /root/nginx-{{ nginx_version }} && ./configure --prefix={{ nginx_install_path }} \  
+  shell: "cd {{ common_path }}/nginx-{{ nginx_version }} && ./configure --prefix={{ nginx_install_path }} \  
           --add-module={{ common_path }}/fastdfs-nginx-module-{{ fastdfs_module_version }}/src  \
           --user=root --group=root \
           --with-stream --with-http_ssl_module --with-http_stub_status_module --with-stream_ssl_module && \
@@ -143,16 +138,20 @@
   template: src=nginx.conf dest={{ nginx_install_path }}/conf/nginx.conf backup=yes
 
 - name: 重启nginx
-  shell: "nginx -s reload"
+  shell: "nginx"
 
 - name: fdfs_storaged加入chkconfig管理
   shell: "chkconfig --add fdfs_storaged && chkconfig fdfs_storaged on"
+  tags: start_fdfs
 
 - name: fdfs_trackerd加入chkconfig管理
   shell: "chkconfig --add fdfs_trackerd && chkconfig fdfs_trackerd on"
+  tags: start_fdfs
 
 - name: 启动fastdfs tracker
   service: name=fdfs_trackerd  state=started  enabled=true
+  tags: start_fdfs
 
 - name: 启动fastdfs storage
   service: name=fdfs_storaged  state=started  enabled=true
+  tags: start_fdfs

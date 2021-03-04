@@ -76,18 +76,6 @@ gzip_vary on;
        }
     }
     server {
-        listen 8081;
-        server_name {{ inventory_hostname }};
-        location / {
-            root /usr/local/web;
-            index index.html;
-            if (!-e $request_filename) {
-                rewrite ^/(.*) /index.html last;
-                break;
-            }
-        }
-    }
-    server {
         listen 9001;
         server_name {{ inventory_hostname }};
         location / {

@@ -1,24 +1,38 @@
 # 'etcd' cluster should have odd member(s) (1,3,5,...)
 # variable 'NODE_NAME' is the distinct name of a member in 'etcd' cluster
+# master node(s)
 [kube-master]
-10.111.30.3
+192.168.1.52
 
+# work node(s)
 [kube-node]
-#10.111.30.3
-10.111.29.255
-10.111.30.0
+192.168.1.50
+192.168.1.51
+192.168.1.52
 
 [master]
-110.111.29.255 ansible_ssh_port=2022
+192.168.1.50
 [slave]
-10.111.30.0 ansible_ssh_port=2022
+192.168.1.51
 
-[all:vars]
+# elk cluster
+[es-nodes]
+192.168.1.50
+192.168.1.51
+192.168.1.52
+
+# kafka cluster
+[kafka-nodes]
+192.168.1.50
+192.168.1.51
+192.168.1.52
+
+[memsql-node]
+192.168.1.52
+
+#[all:vars]
 #ansible_ssh_port=2022
+# --------- Main Variables ---------------
 
-# Deploy Directory (ansible workspace)
-base_dir="/data/ansible"
-
-ip1=10.111.30.3
-ip2=10.111.29.255
-ip3=10.111.30.0
+# Deploy Directory (home workspace)
+#base_dir="/data/ansible"

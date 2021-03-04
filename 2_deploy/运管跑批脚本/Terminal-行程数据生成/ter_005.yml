@@ -1,0 +1,64 @@
+- hosts: 10.111.30.4
+  remote_user: root
+  gather_facts: no
+  vars:
+    dir: /data/jtb/test
+    jar: "platform-provider-terminal-1.0.15.BUILD-SNAPSHOT.jar"
+    sh: "ter_run.sh"
+    num_list: "[7,8,9,10,11]"
+  tasks:
+    - name: "delete fir"
+      file: "path={{ dir }} state=absent"
+
+    - name: "mkdir some dir"
+      file: "path={{ dir }}  state=directory mode=0755 recurse=yes"
+    
+    - name: "mkdir other dir"
+      file: "path={{ dir }}/ter{{ item }} state=directory mode=0755"
+      with_items: "{{ num_list }}"
+    
+    - name: "copy and modify name jar"
+      copy: "src=/root/{{ jar }}  dest={{ dir }}/ter{{ item }}/platform-provider-terminal-1.0.15.BUILD-SNAPSHOT-{{ item }}.jar"
+      with_items: "{{ num_list }}"
+      tags: copy_jar
+
+    - name: "copy run.sh"
+      copy: "src=/root/{{ sh }}  dest={{ dir }}/ter{{ item }}/run.sh mode=0755"
+      with_items: "{{ num_list }}"
+
+    - name: "copy yml"
+      copy: "src=/root/ter_application.yml  dest={{ dir }}/ter{{ item }}/application.yml"
+      with_items: "{{ num_list }}"
+
+    - name: "replace some port"
+      replace:
+        path: "{{ dir }}/ter{{ item }}/application.yml"
+        regexp: '12001'
+        replace: '120{{ item }}'
+      with_items: "{{ num_list }}" 
+
+    - name: "replace some number"
+      lineinfile:
+        path: "{{ dir }}/ter{{ item }}/run.sh"
+        regexp: 'number='
+        line: 'number={{ item }}'
+      with_items: "{{ num_list }}" 
+
+    - name: "replace group"
+      replace: 
+        path: "{{ dir }}/ter{{ item }}/application.yml"
+        regexp: 'TripDetail'
+        replace: 'tripDetail{{ item }}'
+      with_items: "{{ num_list }}"
+    
+    - name: "replace group"
+      replace: 
+        path: "{{ dir }}/ter{{ item }}/application.yml"
+        regexp: 'testPlatform-locphg'
+        replace: 'testPlatform-locphg{{ item }}'
+      with_items: "{{ num_list }}"
+
+    - name: "start run.sh"
+      shell: "cd {{ dir }}/ter{{ item }} && sh run.sh"
+      with_items: "{{ num_list }}"
+      tags: start_run
